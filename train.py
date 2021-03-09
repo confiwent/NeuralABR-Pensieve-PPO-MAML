@@ -13,13 +13,13 @@ from test_ppo_torch import valid, test
 import env
 import load_trace
 
-RANDOM_SEED = 42
+RANDOM_SEED = 39
 S_INFO = 6
 S_LEN = 8
 A_DIM = 6
-LEARNING_RATE_ACTOR = 0.0001
-LEARNING_RATE_CRITIC = 0.0001
-TRAIN_SEQ_LEN = 100  # take as a train batch
+LEARNING_RATE_ACTOR = 0.0003
+LEARNING_RATE_CRITIC = 0.0003
+# TRAIN_SEQ_LEN = 100  # take as a train batch
 VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
 BUFFER_NORM_FACTOR = 10.0
 CHUNK_TIL_VIDEO_END_CAP = 48.0
@@ -27,9 +27,9 @@ M_IN_K = 1000.0
 REBUF_PENALTY = 2.66  # 1 sec rebuffering -> 3 Mbps
 SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
-RANDOM_SEED = 42
-GAMMA = 0.99
-ENTROPY_WEIGHT = 0.99
+# RANDOM_SEED = 42
+# GAMMA = 0.90
+# ENTROPY_WEIGHT = 0.99
 UPDATE_INTERVAL = 500
 RAND_RANGE = 1000
 ENTROPY_EPS = 1e-6
@@ -105,7 +105,7 @@ def train():
                         level=logging.INFO)
     
     with open(LOG_FILE + '_record', 'w') as log_file, open(LOG_FILE + '_test', 'w') as test_log_file:
-        entropy_weight = ENTROPY_WEIGHT
+        # entropy_weight = ENTROPY_WEIGHT
         # value_loss_coef = 0.5
         torch.manual_seed(RANDOM_SEED)
         all_cooked_time, all_cooked_bw, _ = load_trace.load_trace()
@@ -135,12 +135,12 @@ def train():
         epoch = 0
         time_stamp = 0
 
-        exploration_size = 8
-        episode_steps = 50
-        update_num = 1
-        batch_size = 128
-        gamma = 0.99
-        gae_param = 0.95
+        exploration_size = 12
+        episode_steps = 20
+        update_num = 3
+        batch_size = 64
+        gamma = 0.95
+        gae_param = 0.90
         clip = 0.2
         ent_coeff = 2.6
         exploration_threhold = 0.05
@@ -324,7 +324,7 @@ def train():
                 # new mini_batch
                 # # priority_batch_size = int(memory.get_capacity()/10)
                 # assert memory.get_capacity() > batch_size
-                batch_states, batch_actions, batch_returns, batch_advantages = memory.sample(batch_size)
+                batch_states, _, batch_returns, batch_advantages = memory.sample(batch_size)
 
                 # calculate loss
                 v_pre = model_critic(batch_states.type(dtype))
@@ -347,10 +347,8 @@ def train():
                 valid(model_actor, epoch, test_log_file)
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff
+# def main():
+#     train()
 
-
-def main():
-    train()
-
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()

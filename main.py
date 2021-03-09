@@ -11,18 +11,6 @@ from train import train
 # from test_a3c_torch import valid, test
 # import env as Env
 
-RANDOM_SEED = 42
-S_LEN = 38  # take how many frames in the past
-A_DIM = 6
-LEARNING_RATE_ACTOR = 0.001
-LEARNING_RATE_CRITIC = 0.001
-TRAIN_SEQ_LEN = 100  # take as a train batch
-GAMMA = 0.99
-ENTROPY_WEIGHT = 0.99
-ENTROPY_UPDATE_INTERVAL = 1000
-RAND_RANGE = 1000
-ENTROPY_EPS = 1e-6
-MAX_GRAD_NORM = 50
 LOG_FILE = './Results/sim/a3c/log'
 TEST_PATH = './models/A3C/BC/360_a3c_240000.model'
 

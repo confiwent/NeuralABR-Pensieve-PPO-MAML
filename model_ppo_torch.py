@@ -25,7 +25,7 @@ class Actor(torch.nn.Module):
         incoming_size = 2*channel_cnn*5 + 1 * channel_cnn*3 + 3 * channel_fc #
 
         self.fc1 = nn.Linear(in_features=incoming_size, out_features= channel_fc)
-        self.fc2 = nn.Linear(in_features=channel_fc, out_features=channel_fc)
+        # self.fc2 = nn.Linear(in_features=channel_fc, out_features=channel_fc)
         self.fc3 = nn.Linear(in_features=channel_fc, out_features=self.action_space)
         # self.fc4 = nn.Linear(in_features=channel_fc, out_features=1)
 
@@ -44,7 +44,7 @@ class Actor(torch.nn.Module):
         x_3 = F.relu(self.actor_conv3(sizes_batch))
         x_4 = F.relu(self.actor_fc_1(inputs[:, 0:1, -1]))
         x_5 = F.relu(self.actor_fc_2(inputs[:, 1:2, -1]))
-        x_6 = F.relu(self.actor_fc_3(inputs[:, 4:5, -1]))
+        x_6 = F.relu(self.actor_fc_3(inputs[:, 5:6, -1]))
 
         x_1 = x_1.view(-1, self.num_flat_features(x_1))
         x_2 = x_2.view(-1, self.num_flat_features(x_2))
@@ -56,9 +56,9 @@ class Actor(torch.nn.Module):
         x = torch.cat([x_1, x_2, x_3, x_4, x_5, x_6], 1)
         x = F.relu(self.fc1(x))
         # actor
-        actor = F.relu(self.fc2(x))
-        actor = F.relu(self.fc2(actor))
-        actor = F.softmax(self.fc3(actor), dim=1)
+        # actor = F.relu(self.fc1(x))
+        # actor = F.relu(self.fc2(actor))
+        actor = F.softmax(self.fc3(x), dim=1)
         return actor
 
     def num_flat_features(self,x):
@@ -89,7 +89,7 @@ class Critic(torch.nn.Module):
         incoming_size = 2*channel_cnn*5 + 1 * channel_cnn*3 + 3 * channel_fc #
 
         self.fc1 = nn.Linear(in_features=incoming_size, out_features= channel_fc)
-        self.fc2 = nn.Linear(in_features=channel_fc, out_features=channel_fc)
+        # self.fc2 = nn.Linear(in_features=channel_fc, out_features=channel_fc)
         self.fc3 = nn.Linear(in_features=channel_fc, out_features=1)
 
     def forward(self, inputs):
@@ -107,7 +107,7 @@ class Critic(torch.nn.Module):
         x_3 = F.relu(self.critic_conv3(sizes_batch))
         x_4 = F.relu(self.critic_fc_1(inputs[:, 0:1, -1]))
         x_5 = F.relu(self.critic_fc_2(inputs[:, 1:2, -1]))
-        x_6 = F.relu(self.critic_fc_3(inputs[:, 4:5, -1]))
+        x_6 = F.relu(self.critic_fc_3(inputs[:, 5:6, -1]))
 
         x_1 = x_1.view(-1, self.num_flat_features(x_1))
         x_2 = x_2.view(-1, self.num_flat_features(x_2))
@@ -119,9 +119,9 @@ class Critic(torch.nn.Module):
         x = torch.cat([x_1, x_2, x_3, x_4, x_5, x_6], 1)
         x = F.relu(self.fc1(x))
         # critic
-        critic = F.relu(self.fc2(x))
-        critic = F.relu(self.fc2(critic))
-        critic = self.fc3(critic)
+        # critic = F.relu(self.fc1(x))
+        # critic = F.relu(self.fc2(critic))
+        critic = self.fc3(x)
         return critic
 
     def num_flat_features(self,x):
