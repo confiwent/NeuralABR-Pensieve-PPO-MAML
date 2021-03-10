@@ -80,7 +80,7 @@ def train_ac():
         exploration_size = 16
         episode_steps = 20
         update_num = 1
-        batch_size = exploration_size * episode_steps #64
+        # batch_size = exploration_size * episode_steps #64
         gamma = 0.95
         gae_param = 0.90
         ent_coeff = 2.6
@@ -191,16 +191,20 @@ def train_ac():
                     td = rewards[i] + gamma * values[i + 1].data[0, 0] - values[i].data[0, 0]
                     A = float(td) + gamma * gae_param * A
                     advantages.insert(0, A)
-                    R = A + values[i]
+                    # R = A + values[i]
+                    R = gamma * R + rewards[i]
+                    # R = Variable(R)
                     returns.insert(0, R)
                 # store usefull info:
                 # memory.push([states[1:], actions[1:], rewards_comparison[1:], returns[1:], advantages[1:]])
-                memory.push([states[1:], actions[1:], returns[1:], advantages[1:]])
+                # memory.push([states[1:], actions[1:], returns[1:], advantages[1:]])
+                memory.push([states, actions, returns, advantages])
         
             # policy grad updates:
             model_ac.zero_grad()
 
             # mini_batch
+            batch_size = memory.return_size()
             batch_states, batch_actions, batch_returns, batch_advantages = memory.pop(batch_size)
             probs_pre, values_pre = model_ac(batch_states.type(dtype))
 
@@ -233,8 +237,8 @@ def train_ac():
                 valid(model_ac, epoch, test_log_file, SUMMARY_DIR, 'ac')
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff
-# def main():
-#     train_ac()
+def main():
+    train_ac()
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()

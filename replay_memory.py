@@ -26,6 +26,9 @@ class ReplayMemory(object):
         mini_batch = zip(*self.memory[:batch_size])
         return map(lambda x: torch.cat(x, 0), mini_batch)
 
+    def return_size(self):
+        return len(self.memory)
+
 # class ReplayMemory(object):
 #     def __init__(self):
 #         self.capacity = 0
