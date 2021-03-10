@@ -7,7 +7,7 @@ from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 
-from model_ppo_torch import Actor, Critic
+from model_ac_torch import Actor, Critic
 import env as env_valid
 import fixed_env as env_test
 import load_trace
@@ -24,17 +24,17 @@ REBUF_PENALTY = 2.66  # 1 sec rebuffering -> 3 Mbps
 SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1
 TEST_TRACES_VALID = './cooked_test_traces/'
-SUMMARY_DIR = './Results/sim/pppo'
-LOG_FILE = './Results/sim/pppo/log'
-TEST_LOG_FOLDER = './Results/sim/pppo/test_results/'
+SUMMARY_DIR = './Results/sim/a2c'
+LOG_FILE = './Results/sim/a2c/log'
+TEST_LOG_FOLDER = './Results/sim/a2c/test_results/'
 
-LOG_FILE_VALID = './Results/sim/pppo/test_results/log_valid_pppo'
-TEST_LOG_FOLDER_VALID = './Results/sim/pppo/test_results/'
+LOG_FILE_VALID = './Results/sim/a2c/test_results/log_valid_a2c'
+TEST_LOG_FOLDER_VALID = './Results/sim/a2c/test_results/'
 
 # LOG_FILE_TEST = './Results/test/BC/log_hybrid_ppo'
 # SUMMARY_DIR = './Results/test/BC/'
 
-Log_path = './Results/sim/pppo'
+Log_path = './Results/sim/a2c'
 
 def evaluation(model, log_path_ini, net_env, all_file_name, detail_log = True):
 
@@ -204,7 +204,7 @@ def valid(shared_model, epoch, log_file):
                 str(rewards_max) + '\n')
     log_file.flush()
 
-    add_str = 'ppo'
+    add_str = 'a2c'
     model_save_path = Log_path + "/%s_%s_%d.model" %(str('abr'), add_str, int(epoch))
     torch.save(shared_model.state_dict(), model_save_path)
 
