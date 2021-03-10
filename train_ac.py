@@ -55,8 +55,8 @@ def train_ac():
         # value_loss_coef = 0.5
         torch.manual_seed(RANDOM_SEED)
         all_cooked_time, all_cooked_bw, _ = load_trace.load_trace()
-        net_env = env.Environment(all_cooked_time=all_cooked_time,
-                              all_cooked_bw=all_cooked_bw)
+        # net_env = env.Environment(all_cooked_time=all_cooked_time,
+        #                       all_cooked_bw=all_cooked_bw)
 
         model_ac = ActorCritic(A_DIM).type(dtype)
 
@@ -69,7 +69,7 @@ def train_ac():
         state = np.zeros((S_INFO,S_LEN))
         state = torch.from_numpy(state)
         last_bit_rate = DEFAULT_QUALITY
-        bit_rate = DEFAULT_QUALITY
+        # bit_rate = DEFAULT_QUALITY
         # action_vec = np.zeros(A_DIM)
         # action_vec[bit_rate] = 1
 
@@ -77,20 +77,24 @@ def train_ac():
         epoch = 0
         time_stamp = 0
 
-        exploration_size = 16
+        agent_num = 16
         episode_steps = 20
-        update_num = 1
+        # update_num = 1
         # batch_size = exploration_size * episode_steps #64
         gamma = 0.95
         gae_param = 0.90
         ent_coeff = 2.6
         cl_coeff = 0.2
-        memory = ReplayMemory(exploration_size * episode_steps)
+        memory = ReplayMemory(agent_num * episode_steps)
+        env_abr = [env.Environment(all_cooked_time=all_cooked_time,all_cooked_bw=all_cooked_bw) for i in range(agent_num)]
         # memory = ReplayMemory()
+        state_ini = [state for i in range(agent_num)]
+        last_bit_rate_ini = [last_bit_rate for i in range(agent_num)]
+        # bit_rate_ini = [bit_rate for i in range(agent_num)]
 
         while True:
 
-            for explore in range(exploration_size):
+            for agent in range(agent_num):
                 states = []
                 actions = []
                 rewards_comparison = []
@@ -98,6 +102,11 @@ def train_ac():
                 values = []
                 returns = []
                 advantages = []
+
+                # get initial state and bitrate
+                state = state_ini[agent]
+                last_bit_rate = last_bit_rate_ini[agent]
+                # bit_rate = bit_rate_ini[agent]
 
                 for step in range(episode_steps):
 
@@ -120,7 +129,7 @@ def train_ac():
                     delay, sleep_time, buffer_size, rebuf, \
                         video_chunk_size, next_video_chunk_sizes, \
                         end_of_video, video_chunk_remain = \
-                            net_env.get_video_chunk(bit_rate) ## sample in the environment of virtual player
+                            env_abr[agent].get_video_chunk(bit_rate) ## sample in the environment of virtual player
                     
                     time_stamp += delay  # in ms
                     time_stamp += sleep_time  # in ms
@@ -176,6 +185,10 @@ def train_ac():
                                 str(reward) + '\n')
                     log_file.flush()
 
+                # restore the initial state
+                state_ini[agent] = state
+                last_bit_rate_ini[agent] = last_bit_rate
+
                 # one last step
                 R = torch.zeros(1, 1)
                 if end_of_video == False:
@@ -198,7 +211,10 @@ def train_ac():
                 # store usefull info:
                 # memory.push([states[1:], actions[1:], rewards_comparison[1:], returns[1:], advantages[1:]])
                 # memory.push([states[1:], actions[1:], returns[1:], advantages[1:]])
-                memory.push([states, actions, returns, advantages])
+                if torch.eq(states[0][0], torch.from_numpy(np.zeros((S_INFO,S_LEN)))).sum() == S_INFO * S_LEN: ## judge if states[0] equals to torch.from_numpy(np.zeros((S_INFO,S_LEN)))
+                    memory.push([states[1:], actions[1:], returns[1:], advantages[1:]])
+                else:
+                    memory.push([states, actions, returns, advantages])
         
             # policy grad updates:
             model_ac.zero_grad()
