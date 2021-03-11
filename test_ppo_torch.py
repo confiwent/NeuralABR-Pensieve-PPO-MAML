@@ -24,17 +24,17 @@ REBUF_PENALTY = 2.66  # 1 sec rebuffering -> 3 Mbps
 SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1
 TEST_TRACES_VALID = './cooked_test_traces/'
-SUMMARY_DIR = './Results/sim/a2c'
-LOG_FILE = './Results/sim/a2c/log'
-TEST_LOG_FOLDER = './Results/sim/a2c/test_results/'
+SUMMARY_DIR = './Results/sim/ppo'
+LOG_FILE = './Results/sim/ppo/log'
+TEST_LOG_FOLDER = './Results/sim/ppo/test_results/'
 
-LOG_FILE_VALID = './Results/sim/a2c/test_results/log_valid_a2c'
-TEST_LOG_FOLDER_VALID = './Results/sim/a2c/test_results/'
+LOG_FILE_VALID = './Results/sim/ppo/test_results/log_valid_ppo'
+TEST_LOG_FOLDER_VALID = './Results/sim/ppo/test_results/'
 
 # LOG_FILE_TEST = './Results/test/BC/log_hybrid_ppo'
 # SUMMARY_DIR = './Results/test/BC/'
 
-Log_path = './Results/sim/a2c'
+Log_path = './Results/sim/ppo'
 
 def evaluation(model, log_path_ini, net_env, all_file_name, detail_log = True):
 
@@ -116,10 +116,10 @@ def evaluation(model, log_path_ini, net_env, all_file_name, detail_log = True):
                 log_file.close()
                 time_stamp = 0
 
-                if video_count >= len(all_file_name):
+                if video_count + 1 >= len(all_file_name):
                     break
                 else:
-                    log_path = LOG_FILE_VALID + '_' + all_file_name[net_env.trace_idx]
+                    log_path = log_path_ini + '_' + all_file_name[net_env.trace_idx]
                     log_file = open(log_path, 'w')
                     break
             # else:
@@ -204,16 +204,18 @@ def valid(shared_model, epoch, log_file):
                 str(rewards_max) + '\n')
     log_file.flush()
 
-    add_str = 'a2c'
+    add_str = 'ppo'
     model_save_path = Log_path + "/%s_%s_%d.model" %(str('abr'), add_str, int(epoch))
     torch.save(shared_model.state_dict(), model_save_path)
 
-def test(test_path):
-    env = env_test.Environment()
+def test(test_model, test_traces, log_file):
 
     model = Actor(A_DIM).type(torch.FloatTensor)
     model.eval()
-    model.load_state_dict(torch.load(test_path))
-    log_path_ini = LOG_FILE_TEST
-    env = env_valid.Environment()
-    evaluation(model, log_path_ini, env, True)
+    model.load_state_dict(torch.load(test_model))
+
+    log_path_ini = log_file + 'log_test_ppo'
+    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(test_traces)
+    env = env_test.Environment(all_cooked_time=all_cooked_time,
+                              all_cooked_bw=all_cooked_bw)
+    evaluation(model, log_path_ini, env, all_file_names, False)
