@@ -1,3 +1,5 @@
+### too slow, use mpc_v2.py instead
+
 import numpy as np
 import fixed_env as env
 import load_trace
@@ -8,7 +10,7 @@ import itertools
 S_INFO = 5  # bit_rate, buffer_size, rebuffering_time, bandwidth_measurement, chunk_til_video_end
 S_LEN = 8  # take how many frames in the past
 A_DIM = 6
-MPC_FUTURE_CHUNK_COUNT = 5
+MPC_FUTURE_CHUNK_COUNT = 3
 ACTOR_LR_RATE = 0.0001
 CRITIC_LR_RATE = 0.001
 VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
@@ -22,8 +24,9 @@ SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000000
-SUMMARY_DIR = './results'
-LOG_FILE = './results/log_sim_mpc'
+TEST_TRACES = './test_traces/'
+SUMMARY_DIR = './Results/test'
+LOG_FILE = './Results/log_test_mpc'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
 # NN_MODEL = './models/nn_model_ep_5900.ckpt'
 
@@ -55,7 +58,7 @@ def main():
 
     assert len(VIDEO_BIT_RATE) == A_DIM
 
-    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace()
+    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(TEST_TRACES)
 
     net_env = env.Environment(all_cooked_time=all_cooked_time,
                               all_cooked_bw=all_cooked_bw)
@@ -86,26 +89,26 @@ def main():
         # the action is from the last decision
         # this is to make the framework similar to the real
         delay, sleep_time, buffer_size, rebuf, \
-        video_chunk_size, \
-        end_of_video, video_chunk_remain = \
-            net_env.get_video_chunk(bit_rate)
+            video_chunk_size, next_video_chunk_sizes, \
+            end_of_video, video_chunk_remain = \
+                net_env.get_video_chunk(bit_rate)
 
         time_stamp += delay  # in ms
         time_stamp += sleep_time  # in ms
 
         # reward is video quality - rebuffer penalty
-        reward = VIDEO_BIT_RATE[bit_rate] / M_IN_K \
-                 - REBUF_PENALTY * rebuf \
-                 - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[bit_rate] -
-                                           VIDEO_BIT_RATE[last_bit_rate]) / M_IN_K
+        # reward = VIDEO_BIT_RATE[bit_rate] / M_IN_K \
+        #          - REBUF_PENALTY * rebuf \
+        #          - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[bit_rate] -
+        #                                    VIDEO_BIT_RATE[last_bit_rate]) / M_IN_K
 
         # log scale reward
-        # log_bit_rate = np.log(VIDEO_BIT_RATE[bit_rate] / float(VIDEO_BIT_RATE[0]))
-        # log_last_bit_rate = np.log(VIDEO_BIT_RATE[last_bit_rate] / float(VIDEO_BIT_RATE[0]))
+        log_bit_rate = np.log(VIDEO_BIT_RATE[bit_rate] / float(VIDEO_BIT_RATE[0]))
+        log_last_bit_rate = np.log(VIDEO_BIT_RATE[last_bit_rate] / float(VIDEO_BIT_RATE[0]))
 
-        # reward = log_bit_rate \
-        #          - REBUF_PENALTY * rebuf \
-        #          - SMOOTH_PENALTY * np.abs(log_bit_rate - log_last_bit_rate)
+        reward = log_bit_rate \
+                 - REBUF_PENALTY * rebuf \
+                 - SMOOTH_PENALTY * np.abs(log_bit_rate - log_last_bit_rate)
 
         # reward = BITRATE_REWARD[bit_rate] \
         #          - 8 * rebuf - np.abs(BITRATE_REWARD[bit_rate] - BITRATE_REWARD[last_bit_rate])
