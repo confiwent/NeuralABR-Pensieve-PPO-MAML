@@ -17,15 +17,17 @@ VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
 BUFFER_NORM_FACTOR = 10.0
 CHUNK_TIL_VIDEO_END_CAP = 48.0
 M_IN_K = 1000.0
-REBUF_PENALTY = 4.3  # 1 sec rebuffering -> 3 Mbps
+REBUF_PENALTY = 2.66  # 1 sec rebuffering -> 3 Mbps
 SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000
-SUMMARY_DIR = './results'
-LOG_FILE = './results/log_sim_rl'
+TEST_TRACES = './test_traces/'
+SUMMARY_DIR = './Results/test'
+LOG_FILE = './Results/test/log_test_pensieve'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
-NN_MODEL = './models/pretrain_linear_reward.ckpt'
+# NN_MODEL = './model/a3c/nn_model_ep_202000.ckpt'
+NN_MODEL = './model/a3c/pretrain_linear_reward.ckpt'
 
 
 def main():
@@ -37,7 +39,7 @@ def main():
     if not os.path.exists(SUMMARY_DIR):
         os.makedirs(SUMMARY_DIR)
 
-    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace()
+    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(TEST_TRACES)
 
     net_env = env.Environment(all_cooked_time=all_cooked_time,
                               all_cooked_bw=all_cooked_bw)
@@ -91,10 +93,18 @@ def main():
             time_stamp += sleep_time  # in ms
 
             # reward is video quality - rebuffer penalty - smoothness
-            reward = VIDEO_BIT_RATE[bit_rate] / M_IN_K \
-                     - REBUF_PENALTY * rebuf \
-                     - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[bit_rate] -
-                                               VIDEO_BIT_RATE[last_bit_rate]) / M_IN_K
+            # reward = VIDEO_BIT_RATE[bit_rate] / M_IN_K \
+            #          - REBUF_PENALTY * rebuf \
+            #          - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[bit_rate] -
+            #                                    VIDEO_BIT_RATE[last_bit_rate]) / M_IN_K
+
+            # -- log scale reward --
+            log_bit_rate = np.log(VIDEO_BIT_RATE[bit_rate] / float(VIDEO_BIT_RATE[0]))
+            log_last_bit_rate = np.log(VIDEO_BIT_RATE[last_bit_rate] / float(VIDEO_BIT_RATE[0]))
+
+            reward = log_bit_rate \
+                    - REBUF_PENALTY * rebuf \
+                    - SMOOTH_PENALTY * np.abs(log_bit_rate - log_last_bit_rate)
 
             r_batch.append(reward)
 
@@ -155,7 +165,7 @@ def main():
                 a_batch.append(action_vec)
                 entropy_record = []
 
-                print "video count", video_count
+                print("video count", video_count)
                 video_count += 1
 
                 if video_count >= len(all_file_names):
