@@ -2,3 +2,5 @@
 PG methods for tranditional video streaming
 
 implemented by pytorch
+
+Further improvements are ongoing...
