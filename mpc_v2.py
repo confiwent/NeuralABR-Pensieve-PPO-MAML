@@ -185,7 +185,8 @@ def main():
             error_pos = -len(past_errors)
         max_error = float(max(past_errors[error_pos:]))
         future_bandwidth = harmonic_bandwidth/(1+max_error)  # robustMPC here
-        past_bandwidth_ests.append(harmonic_bandwidth)
+        # past_bandwidth_ests.append(harmonic_bandwidth)
+        past_bandwidth_ests.append(future_bandwidth)
 
 
         # future chunks length (try 4 if that many remaining)
