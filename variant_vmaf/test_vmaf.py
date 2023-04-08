@@ -84,12 +84,12 @@ def evaluation(actor_net, log_path_ini, test_env, \
 
             # this should be S_INFO number of terms
             # state[0, -1] = float(delay) / M_IN_K / BUFFER_NORM_FACTOR  # 10 sec 
-            state[0, -1] = float(video_chunk_size) / float(delay) / M_IN_K # kilo byte / ms
+            state[2, -1] = float(video_chunk_size) / float(delay) / M_IN_K # kilo byte / ms
             state[1, -1] = float(buffer_size / BUFFER_NORM_FACTOR)  # 10 sec
-            state[2, -1] = last_quality / DB_NORM_FACTOR  # last quality
-            state[3, -1] = np.minimum(video_chunk_remain, total_chunk_num) / float(total_chunk_num)
+            state[0, -1] = float(last_quality / DB_NORM_FACTOR)  # last quality
+            state[5, -1] = np.minimum(video_chunk_remain, total_chunk_num) / float(total_chunk_num)
             state[4, :a_dim] = np.array(next_video_chunk_sizes) / M_IN_K / M_IN_K# mega byte
-            state[5, -1] = float(delay) / M_IN_K / BUFFER_NORM_FACTOR
+            state[3, -1] = float(delay) / M_IN_K / BUFFER_NORM_FACTOR
             state[6, :a_dim] = np.array(next_video_chunk_psnrs) / DB_NORM_FACTOR
 
             state_ = np.array([state])

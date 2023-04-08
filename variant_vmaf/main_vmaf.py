@@ -13,7 +13,7 @@ import fixed_env_vmaf as env_test
 import load_trace
 
 S_INFO = 7 # 
-S_LEN = 6 # maximum length of states 
+S_LEN = 8 # maximum length of states 
 C_LEN = 0 # content length 
 VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # kbps
 TOTAL_CHUNK_NUM = 49

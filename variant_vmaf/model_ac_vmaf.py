@@ -48,7 +48,7 @@ class Actor(torch.nn.Module):
         x_4 = F.relu(self.actor_fc_1(inputs[:, 0:1, -1]))
         x_5 = F.relu(self.actor_fc_2(inputs[:, 1:2, -1]))
         x_6 = F.relu(self.actor_fc_3(inputs[:, 5:6, -1]))
-        x_7 = F.relu(self.actor_conv3(vmaf_batch))
+        x_7 = F.relu(self.actor_conv4(vmaf_batch))
 
         x_1 = x_1.view(-1, self.num_flat_features(x_1))
         x_2 = x_2.view(-1, self.num_flat_features(x_2))
@@ -86,7 +86,7 @@ class Critic(torch.nn.Module):
         self.critic_conv1 = nn.Conv1d(self.input_channel, channel_cnn, 4) # L_out = 8 - (4-1) -1 + 1 = 5
         self.critic_conv2 = nn.Conv1d(self.input_channel, channel_cnn, 4)
         self.critic_conv3 = nn.Conv1d(self.input_channel, channel_cnn, 4) # for available chunk sizes 6 version  L_out = 6 - (4-1) -1 + 1 = 3
-        self.actor_conv4 = nn.Conv1d(self.input_channel, channel_cnn, 4)
+        self.critic_conv4 = nn.Conv1d(self.input_channel, channel_cnn, 4)
         self.critic_fc_1 = nn.Linear(self.input_channel, channel_fc)
         self.critic_fc_2 = nn.Linear(self.input_channel, channel_fc)
         self.critic_fc_3 = nn.Linear(self.input_channel, channel_fc)
@@ -110,13 +110,13 @@ class Critic(torch.nn.Module):
 
         vmaf_batch = inputs[:, 6:7, :self.action_space]
 
-        x_1 = F.relu(self.actor_conv1(throughputs_batch))
-        x_2 = F.relu(self.actor_conv2(download_time_batch))
-        x_3 = F.relu(self.actor_conv3(sizes_batch))
-        x_4 = F.relu(self.actor_fc_1(inputs[:, 0:1, -1]))
-        x_5 = F.relu(self.actor_fc_2(inputs[:, 1:2, -1]))
-        x_6 = F.relu(self.actor_fc_3(inputs[:, 5:6, -1]))
-        x_7 = F.relu(self.actor_conv3(vmaf_batch))
+        x_1 = F.relu(self.critic_conv1(throughputs_batch))
+        x_2 = F.relu(self.critic_conv2(download_time_batch))
+        x_3 = F.relu(self.critic_conv3(sizes_batch))
+        x_4 = F.relu(self.critic_fc_1(inputs[:, 0:1, -1]))
+        x_5 = F.relu(self.critic_fc_2(inputs[:, 1:2, -1]))
+        x_6 = F.relu(self.critic_fc_3(inputs[:, 5:6, -1]))
+        x_7 = F.relu(self.critic_conv4(vmaf_batch))
 
         x_1 = x_1.view(-1, self.num_flat_features(x_1))
         x_2 = x_2.view(-1, self.num_flat_features(x_2))

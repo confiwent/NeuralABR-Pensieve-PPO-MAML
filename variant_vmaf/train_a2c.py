@@ -173,8 +173,8 @@ def train_a2c(args, train_env, valid_env):
                     state = np.roll(state, -1, axis=1)
 
                     # this should be S_INFO number of terms
-                    state[0, -1] = VIDEO_BIT_RATE[bit_rate] / float(np.max(VIDEO_BIT_RATE))  # last quality
-                    state[1, -1] = buffer_size / BUFFER_NORM_FACTOR  # 10 sec
+                    state[0, -1] = float(last_quality / DB_NORM_FACTOR)  # last quality
+                    state[1, -1] = float(buffer_size / BUFFER_NORM_FACTOR)  # 10 sec
                     state[2, -1] = float(video_chunk_size) / float(delay) / M_IN_K  # kilo byte / ms
                     state[3, -1] = float(delay) / M_IN_K / BUFFER_NORM_FACTOR  # 10 sec 
                     state[4, :A_DIM] = np.array(next_video_chunk_sizes) / M_IN_K / M_IN_K  # mega byte
