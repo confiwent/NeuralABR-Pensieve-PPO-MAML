@@ -8,10 +8,8 @@ import torch
 import torch.optim as optim
 from torch.autograd import Variable
 import logging
-from model_ac_torch import Actor, Critic
+from model_ac_vmaf import Actor, Critic
 from test_vmaf import valid
-import env
-import load_trace
 from replay_memory import ReplayMemory
 
 RANDOM_SEED = 18
@@ -36,7 +34,7 @@ UPDATE_INTERVAL = 1000
 RAND_RANGE = 1000
 ENTROPY_EPS = 1e-6
 SUMMARY_DIR = './variant_vmaf/Results/sim/a2c'
-LOG_FILE = './Results/sim/a2c/log'
+LOG_FILE = './variant_vmaf/Results/sim/a2c/log'
 # TEST_PATH = './models/A3C/BC/360_a3c_240000.model'
 
 parser = argparse.ArgumentParser(description='a2c_pytorch')
@@ -48,13 +46,15 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 
 
 def train_a2c(args, train_env, valid_env):
+    if not os.path.exists(SUMMARY_DIR):
+        os.mkdir(SUMMARY_DIR)
     logging.basicConfig(filename=LOG_FILE + '_central',
                         filemode='w',
                         level=logging.INFO)
     
     with open(LOG_FILE + '_record', 'w') as log_file, open(LOG_FILE + '_test', 'w') as test_log_file:
         torch.manual_seed(RANDOM_SEED)
-        s_info, s_len, _, _, bitrate_versions, quality_penalty, rebuffer_penalty, smooth_penalty_p, smooth_penalty_n = train_env[0].get_env_info()
+        s_info, s_len, _, _, _, quality_penalty, rebuffer_penalty, smooth_penalty_p, smooth_penalty_n = train_env[0].get_env_info()
 
         model_actor = Actor(A_DIM).type(dtype)
         model_critic = Critic(A_DIM).type(dtype)
@@ -88,7 +88,7 @@ def train_a2c(args, train_env, valid_env):
         ent_coeff = 1
         # cl_coeff = 0.2
         memory = ReplayMemory(args.agent_num * episode_steps)
-        state_ini = [state for i in range(args.agent_num)]
+        state_ini = [state for _ in range(args.agent_num)]
         last_quality_ini = [last_quality for _ in range(args.agent_num)]
         # bit_rate_ini = [bit_rate for i in range(agent_num)]
 

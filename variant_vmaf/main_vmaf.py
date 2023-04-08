@@ -5,7 +5,6 @@ from tqdm import tqdm
 import torch
 import torch.optim as optim
 import logging, os
-from train_ppo_gae import train_ppo
 from train_a2c import train_a2c
 # from model_ppo_torch import Actor, Critic
 from test_vmaf import test

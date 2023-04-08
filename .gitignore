@@ -1,0 +1,4 @@
+*.pyc
+
+Results/
+variant_vmaf/Results/

@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import torch
 import torch.nn.functional as F
-from .model_ac_vmaf import Actor
+from model_ac_vmaf import Actor
 
 RANDOM_SEED = 42
 VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
