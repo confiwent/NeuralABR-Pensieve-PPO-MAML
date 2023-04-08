@@ -2,7 +2,7 @@
 
 PG methods for learning an neural ABR policy, same paradigm as Pensieve.
 
-To train the policy with the linear or logoritical video quality metric, refer to ```./main.py```
+To train the policy with the linear or logarithmic video quality metric, refer to ```./main.py```
 
 To train the policy with perceptual video quality metric, i.e., VMAF, refer to ```./variant_vmaf/main_vmaf.py``` and ```./script/train.sh```
 
