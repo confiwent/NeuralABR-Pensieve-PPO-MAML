@@ -6,6 +6,7 @@ import torch
 import torch.optim as optim
 import logging, os
 from train_a2c import train_a2c
+from maml_train_vmaf import train_maml_ppo
 # from model_ppo_torch import Actor, Critic
 from test_vmaf import test
 import env_vmaf as env
@@ -31,9 +32,11 @@ parser = argparse.ArgumentParser(description='RL-based ABR with vmaf')
 parser.add_argument('--test', action='store_true', help='Evaluate only')
 parser.add_argument('--name', default='pensieve', help='the name of algorithm')
 parser.add_argument('--agent-num', nargs='?', const=16, default=16, type=int, help='env numbers')
+parser.add_argument('--valid_i', nargs='?', const=1000, default=1000, type=int, help='checkpoint')
 parser.add_argument('--proba', action='store_true', help='Use probabilistic policy')
 parser.add_argument('--a2c', action='store_true', help='Train policy with A2C')
 parser.add_argument('--ppo', action='store_true', help='Train policy with PPO')
+parser.add_argument('--a2br', action='store_true', help='Train policy with meta-ppo(a2br,Huang)')
 
 USE_CUDA = torch.cuda.is_available()
 dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
@@ -133,7 +136,8 @@ def main():
         
         train_env = [env.Environment(
                             all_cooked_time=all_cooked_time, 
-                            all_cooked_bw=all_cooked_bw, 
+                            all_cooked_bw=all_cooked_bw,
+                            all_file_names = all_file_names, 
                             video_size_file= video_size_file,
                             video_psnr_file= video_vmaf_file) for _ in range(args.agent_num)]
         for _ in range(args.agent_num):
@@ -146,6 +150,11 @@ def main():
         elif args.ppo:
             # train_ppo()
             print('to be continue...')
+        elif args.a2br:
+            train_env_ = train_env[0]
+            del train_env
+            train_maml_ppo(args, train_env_, valid_env)
+            
 
 if __name__ == '__main__':
     main()

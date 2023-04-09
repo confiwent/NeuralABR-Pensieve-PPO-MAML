@@ -274,7 +274,7 @@ def train_a2c(args, train_env, valid_env):
 
             if epoch % UPDATE_INTERVAL == 0:
                 logging.info("Model saved in file")
-                valid(args, valid_env, model_actor, epoch, test_log_file, SUMMARY_DIR)
+                _ = valid(args, valid_env, model_actor, epoch, test_log_file, SUMMARY_DIR)
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff
 def main():

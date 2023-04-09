@@ -34,16 +34,33 @@ def importance_sampling(all_cooked_bw):
 
     return sampling_list
 
+def initialize_tasks(task_list, all_file_names):
+    task2idx = {}
+    for task_id in task_list:
+        for trace_id in range(len(all_file_names)):
+            if task_id in all_file_names[trace_id]:
+                try:
+                    task2idx[task_id].append(trace_id)
+                except:
+                    task2idx[task_id] = []
+                    task2idx[task_id].append(trace_id)
+    assert(len(task2idx)==len(task_list))
+    return task2idx
 
 class Environment:
-    def __init__(self, all_cooked_time, all_cooked_bw, video_size_file, video_psnr_file, random_seed=RANDOM_SEED):
+    def __init__(self, all_cooked_time, all_cooked_bw, all_file_names, video_size_file, video_psnr_file, random_seed=RANDOM_SEED, a2br = False):
         assert len(all_cooked_time) == len(all_cooked_bw)
 
         np.random.seed(random_seed)
+        self.task_list = ['bus.ljansbakken', 'car.snaroya', 'ferry.nesoddtangen', 'metro.kalbakken', 'norway_bus', 'norway_car', 'norway_metro', 'norway_train', 'norway_tram', 'amazon', 'yahoo', 'facebook', 'youtube']
 
         self.all_cooked_time = all_cooked_time
         self.all_cooked_bw = all_cooked_bw
+        self.all_file_names = all_file_names
         self.sampling_list = importance_sampling(all_cooked_bw)
+        self.task2idx = initialize_tasks(all_file_names)
+        self.task_id = int(0)
+        self.a2br_flag = a2br
 
         self.video_chunk_counter = 0
         self.buffer_size = 0
@@ -63,7 +80,12 @@ class Environment:
         # idx_member = self.sampling_list[self.idx_location]
         # idx_str = np.random.randint(len(idx_member))
         # self.trace_idx = idx_member[idx_str]
-        self.trace_idx = np.random.randint(len(self.all_cooked_time))
+        if self.a2br_flag:
+            idx_member = self.task2idx[self.task_id]
+            idx_str = np.random.randint(len(idx_member))
+            self.trace_idx = idx_member[idx_str]
+        else:
+            self.trace_idx = np.random.randint(len(self.all_cooked_time))
         self.cooked_time = self.all_cooked_time[self.trace_idx]
         self.cooked_bw = self.all_cooked_bw[self.trace_idx]
 
@@ -89,6 +111,37 @@ class Environment:
 
         self.total_chunk_num = len(self.video_size[0])
         self.chunk_length_max = self.total_chunk_num
+
+    def reset(self):
+        if self.a2br_flag:
+            idx_member = self.task2idx[self.task_id]
+            idx_str = np.random.randint(len(idx_member))
+            self.trace_idx = idx_member[idx_str]
+        else:
+            self.trace_idx = np.random.randint(len(self.all_cooked_time))
+        self.cooked_time = self.all_cooked_time[self.trace_idx]
+        self.cooked_bw = self.all_cooked_bw[self.trace_idx]
+
+        self.mahimahi_start_ptr = 1
+        # randomize the start point of the trace
+        # note: trace file starts with time 0
+        self.mahimahi_ptr = np.random.randint(1, len(self.cooked_bw))
+        self.last_mahimahi_time = self.cooked_time[self.mahimahi_ptr - 1]
+
+        self.video_chunk_counter = 0
+        self.buffer_size = 0
+    
+    def set_task(self, idx):
+        self.task_id = int(idx)
+        idx_member = self.task2idx[self.task_id]
+        idx_str = np.random.randint(len(idx_member))
+        self.trace_idx = idx_member[idx_str]
+        self.cooked_time = self.all_cooked_time[self.trace_idx]
+        self.cooked_bw = self.all_cooked_bw[self.trace_idx]
+        return self.task_id == len(self.task_list) - 1
+
+    def reset_task(self):
+        self.task_id = int(0)
 
     # pythran export set_env_info(int, int, int, int, int list, float, float)
     def set_env_info(self, s_info, s_len, c_len, chunk_num, br_version, qual_p, rebuff_p, smooth_p, smooth_n):
@@ -214,9 +267,14 @@ class Environment:
             self.video_chunk_counter = 0
             # self.total_chunk_num = random.randint(10, int(self.chunk_length_max))
             
-            self.trace_idx = np.random.randint(len(self.all_cooked_time))
-            if self.trace_idx >= len(self.all_cooked_time):
-                self.trace_idx = 0  
+            if self.a2br_flag:
+                idx_member = self.task2idx[self.task_id]
+                idx_str = np.random.randint(len(idx_member))
+                self.trace_idx = idx_member[idx_str]
+            else:
+                self.trace_idx = np.random.randint(len(self.all_cooked_time))
+                if self.trace_idx >= len(self.all_cooked_time):
+                    self.trace_idx = 0  
             # 
             # ===== importance sampling =====    
             # if self.idx_location + 1 >= SAMPLE_NUM:
