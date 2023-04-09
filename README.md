@@ -1,6 +1,6 @@
-# PPO and A2C based adaptive bitrate algorithm (Variants of Pensieve)
+# PPO and A2C based adaptive bitrate algorithms (Variants of Pensieve, Pytorch version)
 
-PG methods for learning an neural ABR policy, same paradigm as Pensieve.
+Re-implementation of existing neural ABR algorithms with Pytorch, same paradigm as Pensieve.
 
 To train the policy with the linear or logarithmic video quality metric, refer to ```./main.py```
 
