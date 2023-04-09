@@ -89,7 +89,7 @@ class MAMLPPO():
         return advantages, returns
 
     def collect_steps(self, actor, env, n_episodes):
-        env.reset()
+        env.env.reset()
         done = True
         explo_bit_rate = 1
         states = []
@@ -219,7 +219,7 @@ class MAMLPPO():
         mean_loss /= len(iteration_replays)
         return mean_loss
 
-    def meta_optimize(self, iteration_replays, iteration_policies, epoch):
+    def meta_optimize(self, iteration_replays, iteration_policies):
         for ppo_epoch in range(self.ppo_steps):
             loss = self.meta_loss(iteration_replays, iteration_policies, self.actor)
 

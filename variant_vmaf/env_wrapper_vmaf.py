@@ -10,7 +10,6 @@ M_IN_K = 1000.
 BUFFER_NORM_FACTOR = 10.
 DB_NORM_FACTOR = 100.
 
-torch.cuda.set_device(1)
 USE_CUDA = torch.cuda.is_available()
 dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTensor
@@ -19,6 +18,7 @@ class VirtualPlayer:
     def __init__(self, args, env, log_file):
         self.env = env
         self.args = args
+        self.task_list = env.task_list
 
         ## get the information of virtual players (personality)
         s_info, s_len, c_len, total_chunk_num, bitrate_versions, \
@@ -123,6 +123,9 @@ class VirtualPlayer:
             self.reset_play()
         return state_, reward_norm, end_of_video
 
+    def set_task(self, idx):
+        self.env.set_task(idx)
+        
     def reset_play(self):
         self.state = np.zeros((self.s_info, self.s_len))
 

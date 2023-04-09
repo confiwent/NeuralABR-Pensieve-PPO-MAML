@@ -58,7 +58,7 @@ class Environment:
         self.all_cooked_bw = all_cooked_bw
         self.all_file_names = all_file_names
         self.sampling_list = importance_sampling(all_cooked_bw)
-        self.task2idx = initialize_tasks(all_file_names)
+        self.task2idx = initialize_tasks(self.task_list, all_file_names)
         self.task_id = int(0)
         self.a2br_flag = a2br
 
@@ -81,7 +81,7 @@ class Environment:
         # idx_str = np.random.randint(len(idx_member))
         # self.trace_idx = idx_member[idx_str]
         if self.a2br_flag:
-            idx_member = self.task2idx[self.task_id]
+            idx_member = self.task2idx[self.task_list[self.task_id]]
             idx_str = np.random.randint(len(idx_member))
             self.trace_idx = idx_member[idx_str]
         else:
@@ -114,7 +114,7 @@ class Environment:
 
     def reset(self):
         if self.a2br_flag:
-            idx_member = self.task2idx[self.task_id]
+            idx_member = self.task2idx[self.task_list[self.task_id]]
             idx_str = np.random.randint(len(idx_member))
             self.trace_idx = idx_member[idx_str]
         else:
@@ -133,7 +133,7 @@ class Environment:
     
     def set_task(self, idx):
         self.task_id = int(idx)
-        idx_member = self.task2idx[self.task_id]
+        idx_member = self.task2idx[self.task_list[self.task_id]]
         idx_str = np.random.randint(len(idx_member))
         self.trace_idx = idx_member[idx_str]
         self.cooked_time = self.all_cooked_time[self.trace_idx]
@@ -268,7 +268,7 @@ class Environment:
             # self.total_chunk_num = random.randint(10, int(self.chunk_length_max))
             
             if self.a2br_flag:
-                idx_member = self.task2idx[self.task_id]
+                idx_member = self.task2idx[self.task_list[self.task_id]]
                 idx_str = np.random.randint(len(idx_member))
                 self.trace_idx = idx_member[idx_str]
             else:

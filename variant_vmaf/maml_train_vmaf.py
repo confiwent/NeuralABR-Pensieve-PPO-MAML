@@ -28,7 +28,6 @@ DEFAULT_QUALITY = int(1)  # default video quality without agent
 
 SUMMARY_DIR = './variant_vmaf/Results/sim'
 
-torch.cuda.set_device(1)
 USE_CUDA = torch.cuda.is_available()
 dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTensor
@@ -76,7 +75,7 @@ def train_maml_ppo(args, train_env, valid_env):
 
             for _ in range(task_num):
                 clone = deepcopy(agent.actor)
-                vp_env.set_task(_)
+                vp_env.env.set_task(_)
                 task_replay = []
 
                 # Fast Adapt
@@ -95,11 +94,11 @@ def train_maml_ppo(args, train_env, valid_env):
             policy_loss_ = agent.meta_optimize(iteration_replays, iteration_policies)            
 
 
-            writer.add_scalar("Avg_Policy_loss", np.mean(policy_loss_), epoch)
+            writer.add_scalar("Avg_Policy_loss", policy_loss_, epoch)
             
 
             if epoch % int(args.valid_i) == 0 and epoch > 0:
-                model_actor = agent.actor()
+                model_actor = deepcopy(agent.actor)
                 mean_value = valid(args, valid_env, model_actor, epoch, test_log_file, log_file_path)
 
                 agent.save(log_file_path)
