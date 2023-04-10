@@ -57,13 +57,13 @@ def train_maml_ppo(args, train_env, valid_env):
     with open(log_file_name + '_record', 'w') as log_file, \
             open(log_file_name + '_test', 'w') as test_log_file:
         
-        agent = MAMLPPO(br_dim, s_info, s_len, c_len)
+        adapt_steps = 3
+        agent = MAMLPPO(br_dim, adapt_steps=adapt_steps)
 
         steps_in_episode = 50
 
         vp_env = VirtualPlayer(args, train_env, log_file)
-        task_num = len(vp_env.task_list)
-        adapt_steps = 3
+        task_num = len(vp_env.env.task_list)
 
         # while True:
         for epoch in range(int(1e6)):
@@ -98,7 +98,7 @@ def train_maml_ppo(args, train_env, valid_env):
             
 
             if epoch % int(args.valid_i) == 0 and epoch > 0:
-                model_actor = deepcopy(agent.actor)
+                model_actor = agent.actor
                 mean_value = valid(args, valid_env, model_actor, epoch, test_log_file, log_file_path)
 
                 agent.save(log_file_path)

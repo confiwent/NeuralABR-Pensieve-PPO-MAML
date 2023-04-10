@@ -8,6 +8,9 @@ import torch
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.nn.utils import clip_grad_norm_
+from torch.nn.utils.convert_parameters import (vector_to_parameters,
+                                               parameters_to_vector)
+
 import logging
 import learn2learn as l2l
 from torch import autograd
@@ -20,8 +23,8 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 
 class MAMLPPO():
     def __init__(self, a_dim,
-                 adapt_lr=1e-3, meta_lr=1e-4, 
-                 adapt_steps=3, ppo_steps=5,
+                 adapt_lr=1e-4, meta_lr=1e-3, 
+                 adapt_steps=3, ppo_steps=3,
                  gamma=0.99, tau=0.95,
                  policy_clip=0.2,
                  seed=42,
@@ -141,7 +144,7 @@ class MAMLPPO():
         self.optimizer_critic.zero_grad()
         # loss_actor.backward(retain_graph=False)
         loss_critic.backward()
-        clip_grad_norm_(self.critic.parameters(), max_norm = 3., norm_type = 2)     
+        # clip_grad_norm_(self.critic.parameters(), max_norm = 3., norm_type = 2)     
         self.optimizer_critic.step()
 
         del memory
@@ -175,6 +178,7 @@ class MAMLPPO():
         ent_latent = 0.1 * torch.mean(probs * torch.log(probs + 1e-6))
         del memory
         return loss_clip_actor + ent_latent
+        # return loss_clip_actor
 
     def maml_a2c_loss(self, memory, actor):
         # obtain policy loss
@@ -223,8 +227,15 @@ class MAMLPPO():
         for ppo_epoch in range(self.ppo_steps):
             loss = self.meta_loss(iteration_replays, iteration_policies, self.actor)
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-        
+            # self.optimizer.zero_grad()
+            # loss.backward()
+            # self.optimizer.step()
+
+            ## --------- update ---------
+            # this part will take higher order gradients through the inner loop:
+            grads = torch.autograd.grad(loss, self.actor.parameters())
+            grads = parameters_to_vector(grads)
+            old_params = parameters_to_vector(self.actor.parameters())
+            vector_to_parameters(old_params -  self.meta_lr * grads, self.actor.parameters())
+
         return loss
