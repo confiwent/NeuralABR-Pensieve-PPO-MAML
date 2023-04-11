@@ -49,7 +49,7 @@ def train_maml_ppo(args, train_env, valid_env):
     max_QoE[0] = -99999
 
     # define the parameters of ABR environments
-    s_info, s_len, c_len, _, bitrate_versions, _, _, _, _ = train_env.get_env_info()
+    _, _, _, _, bitrate_versions, _, _, _, _ = train_env.get_env_info()
     br_dim = len(bitrate_versions)
 
     torch.manual_seed(RANDOM_SEED)
@@ -57,7 +57,7 @@ def train_maml_ppo(args, train_env, valid_env):
     with open(log_file_name + '_record', 'w') as log_file, \
             open(log_file_name + '_test', 'w') as test_log_file:
         
-        adapt_steps = 3
+        adapt_steps = 2
         agent = MAMLPPO(br_dim, adapt_steps=adapt_steps)
 
         steps_in_episode = 50
@@ -66,7 +66,7 @@ def train_maml_ppo(args, train_env, valid_env):
         task_num = len(vp_env.env.task_list)
 
         # while True:
-        for epoch in range(int(1e6)):
+        for epoch in range(int(1e5)):
             # agent.model_eval()
             # vp_env.reset_reward()
 
