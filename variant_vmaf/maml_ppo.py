@@ -23,10 +23,10 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 
 class MAMLPPO():
     def __init__(self, a_dim,
-                 adapt_lr=1e-4, meta_lr=1e-5, 
+                 adapt_lr=1e-4, meta_lr=1e-3, 
                  adapt_steps=3, ppo_steps=3,
                  gamma=0.99, tau=0.95,
-                 policy_clip=0.04,
+                 policy_clip=0.2,
                  seed=42,
                  device=None, name="MAMLPPO", tensorboard_log="./logs"):
         
