@@ -36,6 +36,10 @@ TEST_LOG_FOLDER_VALID = './Results/sim/ppo/test_results/'
 
 Log_path = './Results/sim/ppo'
 
+dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTensor
+dshorttype = torch.cuda.ShortTensor if torch.cuda.is_available() else torch.ShortTensor
+
 def evaluation(model, log_path_ini, net_env, all_file_name, detail_log = True):
 
     # all_file_name = net_env.get_file_name()
@@ -53,7 +57,7 @@ def evaluation(model, log_path_ini, net_env, all_file_name, detail_log = True):
     for video_count in tqdm(range(len(all_file_name))):
         while True:
             with torch.no_grad():
-                prob= model(state.unsqueeze(0).type(torch.FloatTensor))
+                prob= model(state.unsqueeze(0).type(dtype))
             action = prob.multinomial(num_samples=1).detach()
             bit_rate = int(action.squeeze().cpu().numpy())
 
@@ -164,7 +168,7 @@ def valid(shared_model, epoch, log_file):
     os.system('rm -r ' + TEST_LOG_FOLDER_VALID)
     os.system('mkdir ' + TEST_LOG_FOLDER_VALID)
 
-    model = Actor(A_DIM).type(torch.FloatTensor)
+    model = Actor(A_DIM).type(dtype)
     model.eval()
     model.load_state_dict(shared_model.state_dict())
     log_path_ini = LOG_FILE_VALID
@@ -210,7 +214,7 @@ def valid(shared_model, epoch, log_file):
 
 def test(test_model, test_traces, log_file):
 
-    model = Actor(A_DIM).type(torch.FloatTensor)
+    model = Actor(A_DIM).type(dtype)
     model.eval()
     model.load_state_dict(torch.load(test_model))
 
