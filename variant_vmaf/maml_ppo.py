@@ -44,7 +44,7 @@ class MAMLPPO():
         self.policy_clip = policy_clip
         self.ppo_steps = ppo_steps
         self.ent_coeff = 0.5
-        self.ent_coeff_decay = 0.99
+        self.ent_decay = 0.99
 
         # ---- initialize models ----
         self.actor = Actor(a_dim).type(dtype)
@@ -64,7 +64,7 @@ class MAMLPPO():
         self.actor.load_state_dict(torch.load(path + "/policy.pt"))
 
     def ent_coeff_decay(self):
-        self.ent_coeff = self.ent_coeff_decay * self.ent_coeff
+        self.ent_coeff = self.ent_decay * self.ent_coeff
 
     def compute_adv(self, done, value, values, rewards):
         'Calculates the advantages and returns for a trajectories.'
