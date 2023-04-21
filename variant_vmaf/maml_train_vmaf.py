@@ -57,7 +57,7 @@ def train_maml_ppo(args, train_env, valid_env):
     with open(log_file_name + '_record', 'w') as log_file, \
             open(log_file_name + '_test', 'w') as test_log_file:
         
-        adapt_steps = 2
+        adapt_steps = 4
         agent = MAMLPPO(br_dim, adapt_steps=adapt_steps)
 
         steps_in_episode = 50
@@ -69,6 +69,9 @@ def train_maml_ppo(args, train_env, valid_env):
         for epoch in range(int(1e5)):
             # agent.model_eval()
             # vp_env.reset_reward()
+
+            # ---------- limit the file size -----------
+            vp_env.clean_file_cache(log_file_name + '_record')
 
             iteration_replays = []
             iteration_policies = []

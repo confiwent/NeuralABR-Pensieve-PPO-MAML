@@ -84,7 +84,7 @@ class VirtualPlayer:
                             - self.smooth_n * sm_dif_n \
                                 - 2.661618558192494
 
-        rew_ = float(max(reward, -4 * self.rebuff_p)/20.)
+        rew_ = float(max(reward, -6 * self.rebuff_p)/20.)
         # reward_norm = self.reward_filter(rew_)s
         reward_norm = rew_
 
@@ -139,5 +139,11 @@ class VirtualPlayer:
         
         self.log_file.write('\n')
         self.log_file.flush()
+
+    def clean_file_cache(self, file_name, max_file_size=4.096e+7):
+        file_size = os.stat(file_name).st_size
+        if file_size > max_file_size:
+            self.log_file.seek(0)
+            self.log_file.truncate()
 
 

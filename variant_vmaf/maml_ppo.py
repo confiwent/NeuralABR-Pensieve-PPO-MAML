@@ -23,10 +23,10 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 
 class MAMLPPO():
     def __init__(self, a_dim,
-                 adapt_lr=1e-4, meta_lr=1e-4, 
-                 adapt_steps=3, ppo_steps=3,
+                 adapt_lr=1e-5, meta_lr=1e-4, 
+                 adapt_steps=4, ppo_steps=2,
                  gamma=0.99, tau=0.95,
-                 policy_clip=0.1,
+                 policy_clip=0.02,
                  seed=42,
                  device=None, name="MAMLPPO", tensorboard_log="./logs"):
         
@@ -170,7 +170,7 @@ class MAMLPPO():
         surr2 = ratio.clamp(1 - self.policy_clip, 1 + self.policy_clip) * batch_advantages.type(dtype)
         loss_clip_ = torch.min(surr1, surr2)
         loss_clip_dual = torch.where(torch.lt(batch_advantages.type(dtype), 0.), \
-                                        torch.max(loss_clip_, 1.5 * batch_advantages.type(dtype)), \
+                                        torch.max(loss_clip_, 3 * batch_advantages.type(dtype)), \
                                             loss_clip_)
         loss_clip_actor = -torch.mean(loss_clip_dual)
 
@@ -186,7 +186,7 @@ class MAMLPPO():
         probs = actor(batch_states)
         prob_value = torch.gather(probs, dim=1, index=batch_actions.type(dlongtype))
         loss = -torch.mean(prob_value * batch_advantages.type(dtype))
-        ent = 0.1 * torch.mean(probs * torch.log(probs + 1e-5))
+        ent = 0.2 * torch.mean(probs * torch.log(probs + 1e-5))
         return loss + ent
 
     def fast_adapt(self, clone, train_episodes, first_order=False):
@@ -227,15 +227,15 @@ class MAMLPPO():
         for ppo_epoch in range(self.ppo_steps):
             loss = self.meta_loss(iteration_replays, iteration_policies, self.actor)
 
-            # self.optimizer.zero_grad()
-            # loss.backward()
-            # self.optimizer.step()
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
             ## --------- update ---------
             # this part will take higher order gradients through the inner loop:
-            grads = torch.autograd.grad(loss, self.actor.parameters())
-            grads = parameters_to_vector(grads)
-            old_params = parameters_to_vector(self.actor.parameters())
-            vector_to_parameters(old_params -  self.meta_lr * grads, self.actor.parameters())
+            # grads = torch.autograd.grad(loss, self.actor.parameters())
+            # grads = parameters_to_vector(grads)
+            # old_params = parameters_to_vector(self.actor.parameters())
+            # vector_to_parameters(old_params -  self.meta_lr * grads, self.actor.parameters())
 
         return loss
