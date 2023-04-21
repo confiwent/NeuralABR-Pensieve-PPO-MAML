@@ -84,7 +84,7 @@ def train_maml_ppo(args, train_env, valid_env):
                 # Fast Adapt
                 for _ in range(adapt_steps):
                     train_episodes = agent.collect_steps(clone, vp_env, n_episodes=steps_in_episode)
-                    clone = agent.fast_adapt(clone, train_episodes, first_order=True)
+                    _, _, clone = agent.fast_adapt(clone, train_episodes, first_order=True)
                     task_replay.append(train_episodes)
 
                 # Compute Validation Loss
@@ -94,10 +94,11 @@ def train_maml_ppo(args, train_env, valid_env):
                 iteration_policies.append(clone)
 
             # training the models
-            policy_loss_ = agent.meta_optimize(iteration_replays, iteration_policies)            
+            policy_loss_, entropy_loss_ = agent.meta_optimize(iteration_replays, iteration_policies)            
 
 
             writer.add_scalar("Avg_Policy_loss", policy_loss_, epoch)
+            writer.add_scalar("Avg_Entropy_loss", entropy_loss_, epoch)
             
 
             if epoch % int(args.valid_i) == 0 and epoch > 0:
@@ -107,6 +108,9 @@ def train_maml_ppo(args, train_env, valid_env):
                 agent.save(log_file_path)
             writer.add_scalar("Avg_Return", mean_value, epoch)
             writer.flush()
+
+            if epoch % int(100) == 0 and epoch > 0:
+                agent.ent_coeff_decay()
 
         writer.close()
     

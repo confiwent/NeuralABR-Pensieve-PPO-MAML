@@ -43,6 +43,8 @@ class MAMLPPO():
         self.adapt_steps = adapt_steps
         self.policy_clip = policy_clip
         self.ppo_steps = ppo_steps
+        self.ent_coeff = 0.5
+        self.ent_coeff_decay = 0.99
 
         # ---- initialize models ----
         self.actor = Actor(a_dim).type(dtype)
@@ -50,7 +52,7 @@ class MAMLPPO():
 
         # ---- set optimizer for actor and critic
         self.optimizer = torch.optim.Adam(self.actor.parameters(), meta_lr)
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), adapt_lr)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), meta_lr)
 
     def save(self, path="./"):
         torch.save(self.critic.state_dict(), path + "/critic.pt")
@@ -60,6 +62,9 @@ class MAMLPPO():
     def load(self, path="./"):
         self.critic.load_state_dict(torch.load(path + "/baseline.pt"))
         self.actor.load_state_dict(torch.load(path + "/policy.pt"))
+
+    def ent_coeff_decay(self):
+        self.ent_coeff = self.ent_coeff_decay * self.ent_coeff
 
     def compute_adv(self, done, value, values, rewards):
         'Calculates the advantages and returns for a trajectories.'
@@ -175,9 +180,9 @@ class MAMLPPO():
         loss_clip_actor = -torch.mean(loss_clip_dual)
 
         # entropy loss
-        ent_latent = 0.1 * torch.mean(probs * torch.log(probs + 1e-6))
+        ent_latent = self.ent_coeff * torch.mean(probs * torch.log(probs + 1e-5))
         del memory
-        return loss_clip_actor + ent_latent
+        return loss_clip_actor, ent_latent
         # return loss_clip_actor
 
     def maml_a2c_loss(self, memory, actor):
@@ -186,25 +191,27 @@ class MAMLPPO():
         probs = actor(batch_states)
         prob_value = torch.gather(probs, dim=1, index=batch_actions.type(dlongtype))
         loss = -torch.mean(prob_value * batch_advantages.type(dtype))
-        ent = 0.2 * torch.mean(probs * torch.log(probs + 1e-5))
-        return loss + ent
+        ent = self.ent_coeff * torch.mean(probs * torch.log(probs + 1e-5))
+        return loss, ent
 
     def fast_adapt(self, clone, train_episodes, first_order=False):
         memory = ReplayMemory(500)
         memory.push(train_episodes)
         second_order = not first_order
-        loss = self.maml_a2c_loss(memory, clone)
+        loss_a, loss_e = self.maml_a2c_loss(memory, clone)
+        loss = loss_a + loss_e
         gradients = autograd.grad(loss,
                                 clone.parameters(),
                                 retain_graph=second_order,
                                 create_graph=second_order)
         
         del memory
-        return l2l.algorithms.maml.maml_update(clone, self.adapt_lr, gradients)
+        return loss_a, loss_e, l2l.algorithms.maml.maml_update(clone, self.adapt_lr, gradients)
         
 
     def meta_loss(self, iteration_replays, iteration_policies, policy):
-        mean_loss = 0.0
+        mean_loss_a = 0.0
+        mean_loss_e = 0.0
         for _ in range(len(iteration_replays)):
             task_replays = iteration_replays[_]
             old_policy = iteration_policies[_]
@@ -215,19 +222,23 @@ class MAMLPPO():
             # Fast Adapt
             for _ in range(len(train_replays)):
                 train_episodes = train_replays[_]
-                new_policy = self.fast_adapt(new_policy, train_episodes, first_order=False)
+                _, _, new_policy = self.fast_adapt(new_policy, train_episodes, first_order=False)
 
             # Compute Surrogate Loss
-            surr_loss = self.dual_ppo_loss(valid_episodes, old_policy, new_policy)
-            mean_loss += surr_loss
-        mean_loss /= len(iteration_replays)
-        return mean_loss
+            loss_a, loss_e = self.dual_ppo_loss(valid_episodes, old_policy, new_policy)
+            # surr_loss = loss_a + loss_e
+            mean_loss_a += loss_a
+            mean_loss_e += loss_e
+        mean_loss_a /= len(iteration_replays)
+        mean_loss_e /= len(iteration_replays)
+        return mean_loss_a, mean_loss_e
 
     def meta_optimize(self, iteration_replays, iteration_policies):
-        for ppo_epoch in range(self.ppo_steps):
-            loss = self.meta_loss(iteration_replays, iteration_policies, self.actor)
+        for _ in range(self.ppo_steps):
+            loss_a, loss_e = self.meta_loss(iteration_replays, iteration_policies, self.actor)
 
             self.optimizer.zero_grad()
+            loss = loss_a + loss_e
             loss.backward()
             self.optimizer.step()
 
@@ -238,4 +249,4 @@ class MAMLPPO():
             # old_params = parameters_to_vector(self.actor.parameters())
             # vector_to_parameters(old_params -  self.meta_lr * grads, self.actor.parameters())
 
-        return loss
+        return loss_a, loss_e

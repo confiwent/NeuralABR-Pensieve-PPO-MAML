@@ -84,7 +84,7 @@ class VirtualPlayer:
                             - self.smooth_n * sm_dif_n \
                                 - 2.661618558192494
 
-        rew_ = float(max(reward, -6 * self.rebuff_p)/20.)
+        rew_ = float(max(reward, -6 * self.rebuff_p)/100.)
         # reward_norm = self.reward_filter(rew_)s
         reward_norm = rew_
 
