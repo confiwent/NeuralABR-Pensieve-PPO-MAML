@@ -2,6 +2,11 @@ import argparse
 
 def get_args(rest_args):
     parser = argparse.ArgumentParser(description='MAML-PPO-based ABR with vmaf')
+    parser.add_argument('--test', action='store_true', help='Evaluate only')
+    parser.add_argument('--name', default='pensieve', help='the name of algorithm')
+    parser.add_argument('--a2c', action='store_true', help='Train policy with A2C')
+    parser.add_argument('--ppo', action='store_true', help='Train policy with PPO')
+    parser.add_argument('--a2br', action='store_true', help='Train policy with meta-ppo(a2br,Huang)')
     parser.add_argument('--agent-num', nargs='?', const=16, default=16, type=int, help='env numbers')
     parser.add_argument('--valid-i', nargs='?', const=1000, default=1000, type=int, help='checkpoint')
     parser.add_argument('--proba', action='store_true', help='Use probabilistic policy')

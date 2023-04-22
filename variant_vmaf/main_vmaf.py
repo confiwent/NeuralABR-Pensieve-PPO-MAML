@@ -7,6 +7,7 @@ import torch.optim as optim
 import logging, os
 from train_a2c import train_a2c
 from maml_train_vmaf import train_maml_ppo
+import config.args_maml as args_maml
 # from model_ppo_torch import Actor, Critic
 from test_vmaf import test
 import env_vmaf as env
@@ -27,13 +28,6 @@ LOG_FILE = './variant_vmaf/Results/test/a2c/'
 TEST_MODEL = './model/ppo/abr_ppo_92000.model'
 TEST_TRACES = './test_traces/'
 TRAIN_TRACES = './cooked_traces/'
-
-parser = argparse.ArgumentParser(description='RL-based ABR with vmaf')
-parser.add_argument('--test', action='store_true', help='Evaluate only')
-parser.add_argument('--name', default='pensieve', help='the name of algorithm')
-parser.add_argument('--a2c', action='store_true', help='Train policy with A2C')
-parser.add_argument('--ppo', action='store_true', help='Train policy with PPO')
-parser.add_argument('--a2br', action='store_true', help='Train policy with meta-ppo(a2br,Huang)')
 
 USE_CUDA = torch.cuda.is_available()
 dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
@@ -105,8 +99,9 @@ def run_test(args, video_vmaf_file, video_size_file):
     test(args, test_model_, test_env, log_path, log_save_dir)
 
 def main():
-    # test(TEST_MODEL, TEST_TRACES, LOG_FILE)
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    _, rest_args = parser.parse_known_args() 
+    args = args_maml.get_args(rest_args)
     video_size_file = './video_size/ori/video_size_' #video = 'origin'
     video_vmaf_file = './variant_vmaf/video_vmaf/chunk_vmaf'
 
