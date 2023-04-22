@@ -57,10 +57,9 @@ def train_maml_ppo(args, train_env, valid_env):
     with open(log_file_name + '_record', 'w') as log_file, \
             open(log_file_name + '_test', 'w') as test_log_file:
         
-        adapt_steps = 4
-        agent = MAMLPPO(br_dim, adapt_steps=adapt_steps)
+        agent = MAMLPPO(args, br_dim)
 
-        steps_in_episode = 50
+        steps_in_episode = args.ro_len
 
         vp_env = VirtualPlayer(args, train_env, log_file)
         task_num = len(vp_env.env.task_list)
@@ -82,7 +81,7 @@ def train_maml_ppo(args, train_env, valid_env):
                 task_replay = []
 
                 # Fast Adapt
-                for _ in range(adapt_steps):
+                for _ in range(args.adapt_steps):
                     train_episodes = agent.collect_steps(clone, vp_env, n_episodes=steps_in_episode)
                     _, _, clone = agent.fast_adapt(clone, train_episodes, first_order=True)
                     task_replay.append(train_episodes)

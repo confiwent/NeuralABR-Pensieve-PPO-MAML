@@ -30,6 +30,8 @@ class VirtualPlayer:
         self.rebuff_p = rebuffer_penalty
         self.smooth_p = smooth_penalty_p
         self.smooth_n = smooth_penalty_n
+        self.scaling_lb = args.scaling_lb
+        self.scaling_r = args.scaling_r
 
         # Video information 
         self.total_chunk_num = total_chunk_num
@@ -61,7 +63,6 @@ class VirtualPlayer:
         self.video_chunk_psnrs = env.get_video_psnr()
 
     def step(self, bit_rate):
-
         # execute a step forward
         delay, sleep_time, buffer_size, rebuf, \
             video_chunk_size, next_video_chunk_sizes, next_video_chunk_psnrs, \
@@ -84,7 +85,7 @@ class VirtualPlayer:
                             - self.smooth_n * sm_dif_n \
                                 - 2.661618558192494
 
-        rew_ = float(max(reward, -6 * self.rebuff_p)/100.)
+        rew_ = float(max(reward, - self.scaling_lb * self.rebuff_p)/self.scaling_r)
         # reward_norm = self.reward_filter(rew_)s
         reward_norm = rew_
 

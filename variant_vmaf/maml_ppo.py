@@ -22,11 +22,7 @@ dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTens
 dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTensor
 
 class MAMLPPO():
-    def __init__(self, a_dim,
-                 adapt_lr=1e-5, meta_lr=1e-4, 
-                 adapt_steps=4, ppo_steps=2,
-                 gamma=0.99, tau=0.95,
-                 policy_clip=0.02,
+    def __init__(self, args, a_dim,
                  seed=42,
                  device=None, name="MAMLPPO", tensorboard_log="./logs"):
         
@@ -36,28 +32,28 @@ class MAMLPPO():
 
         self.a_dim = a_dim
 
-        self.gamma = gamma
-        self.tau = tau
-        self.adapt_lr = adapt_lr
-        self.meta_lr = meta_lr
-        self.adapt_steps = adapt_steps
-        self.policy_clip = policy_clip
-        self.ppo_steps = ppo_steps
-        self.ent_coeff = 0.5
-        self.ent_decay = 0.99
+        self.gamma = args.gae_gamma
+        self.tau = args.gae_lambda
+        self.adapt_lr = args.lr_adapt
+        self.meta_lr = args.lr_meta
+        self.adapt_steps = args.adapt_steps
+        self.policy_clip = args.clip
+        self.ppo_steps = args.ppo_ups
+        self.ent_coeff = args.ent_coeff
+        self.ent_decay = args.ent_decay
+        self.dual_adv_w = args.dual_adv_w
 
         # ---- initialize models ----
         self.actor = Actor(a_dim).type(dtype)
         self.critic = Critic(a_dim).type(dtype)
 
         # ---- set optimizer for actor and critic
-        self.optimizer = torch.optim.Adam(self.actor.parameters(), meta_lr)
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), meta_lr)
+        self.optimizer = torch.optim.Adam(self.actor.parameters(), self.meta_lr)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), self.meta_lr)
 
     def save(self, path="./"):
         torch.save(self.critic.state_dict(), path + "/critic.pt")
         torch.save(self.actor.state_dict(), path + "/actor.pt")
-
 
     def load(self, path="./"):
         self.critic.load_state_dict(torch.load(path + "/baseline.pt"))
@@ -158,7 +154,8 @@ class MAMLPPO():
     def dual_ppo_loss(self, train_episodes, old_policy, new_policy):
         memory = ReplayMemory(500)
         memory.push(train_episodes)
-        batch_states, batch_actions, _, batch_advantages = memory.sample_cuda(memory.return_size())
+        batch_states, batch_actions, _, batch_advantages = \
+                                        memory.sample_cuda(memory.return_size())
         # old_prob
         probs_old = old_policy(batch_states).detach()
         prob_value_old = torch.gather(probs_old, dim=1, \
@@ -175,7 +172,7 @@ class MAMLPPO():
         surr2 = ratio.clamp(1 - self.policy_clip, 1 + self.policy_clip) * batch_advantages.type(dtype)
         loss_clip_ = torch.min(surr1, surr2)
         loss_clip_dual = torch.where(torch.lt(batch_advantages.type(dtype), 0.), \
-                                        torch.max(loss_clip_, 3 * batch_advantages.type(dtype)), \
+                                        torch.max(loss_clip_, self.dual_adv_w * batch_advantages.type(dtype)), \
                                             loss_clip_)
         loss_clip_actor = -torch.mean(loss_clip_dual)
 
@@ -208,7 +205,6 @@ class MAMLPPO():
         del memory
         return loss_a, loss_e, l2l.algorithms.maml.maml_update(clone, self.adapt_lr, gradients)
         
-
     def meta_loss(self, iteration_replays, iteration_policies, policy):
         mean_loss_a = 0.0
         mean_loss_e = 0.0
