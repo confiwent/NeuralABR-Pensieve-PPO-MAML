@@ -1,8 +1,6 @@
 """
 In this file, maml_ppo algorithm is adopted to fine-tune the policy of rate adaptation, gae advantage function and multi-step return are used to calculate the gradients.
 
-!!! Add the constraints of optimization problem for action selections (called Action Constraints)
-
 Add the reward normalization, using vmaf quality metric
 
 Designed by kannw_1230@sjtu.edu.cn
