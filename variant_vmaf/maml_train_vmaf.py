@@ -37,8 +37,9 @@ def train_maml_ppo(args, train_env, valid_env):
     log_file_name = log_file_path + '/log'    
     if not os.path.exists(log_file_path):
         os.mkdir(log_file_path)
-    command = 'rm ' + log_file_path + '/*'
-    os.system(command)
+    if not args.init:
+        command = 'rm ' + log_file_path + '/*'
+        os.system(command)
     writer = SummaryWriter(log_file_path)
 
     ## set some variables of validation
@@ -56,6 +57,8 @@ def train_maml_ppo(args, train_env, valid_env):
             open(log_file_name + '_test', 'w') as test_log_file:
         
         agent = MAMLPPO(args, br_dim)
+        if args.init:
+            agent.load(log_file_path)
 
         steps_in_episode = args.ro_len
 

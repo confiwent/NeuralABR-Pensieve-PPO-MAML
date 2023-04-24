@@ -10,6 +10,7 @@ def get_args(rest_args):
     parser.add_argument('--agent-num', nargs='?', const=16, default=16, type=int, help='env numbers')
     parser.add_argument('--valid-i', nargs='?', const=1000, default=1000, type=int, help='checkpoint')
     parser.add_argument('--proba', action='store_true', help='Use probabilistic policy')
+    parser.add_argument('--init', action='store_true', help='Load the pre-train model parameters')
 
     ## --------- Env configuration ----------
     parser.add_argument('--ro-len', nargs='?', const=50, default=50, type=int, help='Length of roll-out')

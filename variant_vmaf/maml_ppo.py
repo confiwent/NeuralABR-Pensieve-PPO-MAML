@@ -56,8 +56,8 @@ class MAMLPPO():
         torch.save(self.actor.state_dict(), path + "/actor.pt")
 
     def load(self, path="./"):
-        self.critic.load_state_dict(torch.load(path + "/baseline.pt"))
-        self.actor.load_state_dict(torch.load(path + "/policy.pt"))
+        self.critic.load_state_dict(torch.load(path + "/critic.pt"))
+        self.actor.load_state_dict(torch.load(path + "/actor.pt"))
 
     def ent_coeff_decay(self):
         self.ent_coeff = self.ent_decay * self.ent_coeff

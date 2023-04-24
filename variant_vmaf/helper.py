@@ -167,6 +167,12 @@ def get_opt_space_vmaf(ob, state, last_quality, index, br_versions, quality_p, r
 
     return output, future_bandwidth
 
+def load_models(path, model_actor, model_critic):
+    params_actor = torch.load(path + '/actor.pt')
+    params_critic = torch.load(path + '/critic.pt')
+    # model_actor.load_state_dict(params_actor)
+    # model_critic.load_state_dict(params_critic)
+    return model_actor.load_state_dict(params_actor), model_critic.load_state_dict(params_critic)
 
 def save_models(logging, summary_dir, add_str, model_actor, vae_net, epoch,
                 max_QoE, mean_value):
