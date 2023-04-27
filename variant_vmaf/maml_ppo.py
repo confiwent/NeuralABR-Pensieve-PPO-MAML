@@ -14,8 +14,8 @@ from torch.nn.utils.convert_parameters import (vector_to_parameters,
 import logging
 import learn2learn as l2l
 from torch import autograd
-from replay_memory import ReplayMemory
-from model_ac_vmaf import Actor, Critic
+from utils.replay_memory import ReplayMemory
+from models.model_ac_vmaf import Actor, Critic
 
 USE_CUDA = torch.cuda.is_available()
 dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor

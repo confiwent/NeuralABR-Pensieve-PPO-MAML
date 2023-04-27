@@ -10,9 +10,9 @@ from maml_train_vmaf import train_maml_ppo
 import config.args_maml as args_maml
 # from model_ppo_torch import Actor, Critic
 from test_vmaf import test
-import env_vmaf as env
-import fixed_env_vmaf as env_test
-import load_trace
+import envs.env_vmaf as env
+import envs.fixed_env_vmaf as env_test
+import utils.load_trace as load_trace
 
 S_INFO = 7 # 
 S_LEN = 8 # maximum length of states 

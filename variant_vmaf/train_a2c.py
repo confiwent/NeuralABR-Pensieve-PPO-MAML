@@ -8,9 +8,9 @@ import torch
 import torch.optim as optim
 from torch.autograd import Variable
 import logging
-from model_ac_vmaf import Actor, Critic
+from models.model_ac_vmaf import Actor, Critic
 from test_vmaf import valid
-from replay_memory import ReplayMemory
+from utils.replay_memory import ReplayMemory
 
 RANDOM_SEED = 18
 A_DIM = 6

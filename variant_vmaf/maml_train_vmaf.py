@@ -19,7 +19,7 @@ from copy import deepcopy
 from torch.utils.tensorboard import SummaryWriter
 from maml_ppo import MAMLPPO
 from test_vmaf import valid
-from env_wrapper_vmaf import VirtualPlayer
+from envs.env_wrapper_vmaf import VirtualPlayer
 
 RANDOM_SEED = 28
 DEFAULT_QUALITY = int(1)  # default video quality without agent
