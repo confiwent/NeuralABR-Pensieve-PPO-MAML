@@ -20,6 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from maml_ppo import MAMLPPO
 from test_vmaf import valid
 from envs.env_wrapper_vmaf import VirtualPlayer
+from utils.helper import check_folder
 
 RANDOM_SEED = 28
 DEFAULT_QUALITY = int(1)  # default video quality without agent
@@ -32,14 +33,10 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 
 def train_maml_ppo(args, train_env, valid_env):
     add_str = args.name
-    summary_dir = SUMMARY_DIR
-    log_file_path = os.path.join(*[summary_dir, add_str])
+    summary_dir = os.path.join(*[SUMMARY_DIR, add_str]) 
+    check_folder(summary_dir)
+    log_file_path = os.path.join(*[summary_dir, args.ckpt])
     log_file_name = log_file_path + '/log'    
-    if not os.path.exists(log_file_path):
-        os.mkdir(log_file_path)
-    if not args.init:
-        command = 'rm ' + log_file_path + '/*'
-        os.system(command)
     writer = SummaryWriter(log_file_path)
 
     ## set some variables of validation
@@ -58,7 +55,8 @@ def train_maml_ppo(args, train_env, valid_env):
         
         agent = MAMLPPO(args, br_dim)
         if args.init:
-            agent.load(log_file_path)
+            init_ckpt_path = os.path.join(*[summary_dir, 'init_ckpt']) # Notice: ensure the correct model!
+            agent.load(init_ckpt_path)
 
         steps_in_episode = args.ro_len
 

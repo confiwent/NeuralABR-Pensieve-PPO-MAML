@@ -1,4 +1,4 @@
-import argparse
+import argparse, time
 import numpy as np
 from tqdm import tqdm
 
@@ -99,11 +99,13 @@ def run_test(args, video_vmaf_file, video_size_file):
     test(args, test_model_, test_env, log_path, log_save_dir)
 
 def main():
+    ts = time.strftime('%b%d-%H:%M:%S', time.gmtime())
     parser = argparse.ArgumentParser()
     _, rest_args = parser.parse_known_args() 
     args = args_maml.get_args(rest_args)
     video_size_file = './video_size/ori/video_size_' #video = 'origin'
     video_vmaf_file = './variant_vmaf/video_vmaf/chunk_vmaf'
+    args.ckpt = f'{ts}'
 
     if args.test:
         run_test(args, video_vmaf_file, video_size_file)

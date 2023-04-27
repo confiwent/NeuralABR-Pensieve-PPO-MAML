@@ -251,3 +251,13 @@ def save_models_comyco(logging, summary_dir, add_str, model_actor, epoch,
 
         if os.path.exists(actor_save_path): os.system('rm ' + actor_save_path)
         torch.save(model_actor.state_dict(), actor_save_path)
+
+def check_folder(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+def clear_folder(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    else:
+        os.system('rm ' + folder_path +'/*')
