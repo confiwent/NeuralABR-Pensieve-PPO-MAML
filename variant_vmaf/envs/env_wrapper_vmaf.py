@@ -86,7 +86,7 @@ class VirtualPlayer:
                                 - 2.661618558192494
 
         rew_ = float(max(reward, - self.scaling_lb * self.rebuff_p)/self.scaling_r)
-        # reward_norm = self.reward_filter(rew_)s
+        # reward_norm = self.reward_filter(rew_)
         reward_norm = rew_
 
         self.last_bit_rate = bit_rate

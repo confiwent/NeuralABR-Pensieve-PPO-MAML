@@ -1,5 +1,5 @@
 import argparse
-import os
+import os, pdb
 import numpy as np
 import random
 from tqdm import tqdm
@@ -241,7 +241,8 @@ def train_a2c(args, train_env, valid_env):
 
             # mini_batch
             batch_size = memory.return_size()
-            batch_states, batch_actions, batch_returns, batch_advantages = memory.pop(batch_size)
+            batch_states, batch_actions, batch_returns, batch_advantages = memory.sample_cuda(batch_size)
+            # pdb.set_trace()
             probs_pre = model_actor(batch_states.type(dtype))
             values_pre = model_critic(batch_states.type(dtype))
 
@@ -277,6 +278,12 @@ def train_a2c(args, train_env, valid_env):
                 _ = valid(args, valid_env, model_actor, epoch, test_log_file, SUMMARY_DIR)
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff
+                save(model_actor, model_critic, SUMMARY_DIR)
+
+def save(actor, critic, path="./"):
+    torch.save(critic.state_dict(), path + "/critic.pt")
+    torch.save(actor.state_dict(), path + "/actor.pt")
+
 def main():
     train_a2c()
 
