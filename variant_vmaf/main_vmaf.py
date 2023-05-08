@@ -34,45 +34,9 @@ dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTens
 dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTensor
 
 def get_test_traces():
-    # if args.tf:
-    #     log_save_dir = TEST_LOG_FILE_FCC
-    #     test_traces = TEST_TRACES_FCC
-    # elif args.t3g:
-    #     log_save_dir = TEST_LOG_FILE_3GP
-    #     test_traces = TEST_TRACES_3GP
-    # elif args.to:
-    #     log_save_dir = TEST_LOG_FILE_OBE
-    #     test_traces = TEST_TRACES_OBE
-    # elif args.tg:
-    #     log_save_dir = TEST_LOG_FILE_GHT
-    #     test_traces = TEST_TRACES_GHT
-    # elif args.tn:
-    #     log_save_dir = TEST_LOG_FILE_FHN
-    #     test_traces = TEST_TRACES_FHN
-    # elif args.tp:
-    #     log_save_dir = TEST_LOG_FILE_PUF
-    #     test_traces = TEST_TRACES_PUF
-    # elif args.tp2:
-    #     log_save_dir = TEST_LOG_FILE_PUF2
-    #     test_traces = TEST_TRACES_PUF2
-    # elif args.tfh:
-    #     log_save_dir = TEST_LOG_FILE_FH
-    #     test_traces = TEST_TRACES_FH
-    # elif args.tw:
-    #     log_save_dir = TEST_LOG_FILE_PWI
-    #     test_traces = TEST_TRACES_PWI
-    # elif args.ti:
-    #     log_save_dir = TEST_LOG_FILE_INT
-    #     test_traces = TEST_TRACES_INT
-    # else:
-    #     # print("Please choose the throughput data traces!!!")
-    #     log_save_dir = TEST_LOG_FILE_FCC
-    #     test_traces = TEST_TRACES_FCC
     log_save_dir = LOG_FILE
     test_traces = TEST_TRACES
-    
     log_path = log_save_dir + 'log_test_a2c' #args.name
-
     return log_save_dir, test_traces, log_path
 
 def run_test(args, video_vmaf_file, video_size_file):
