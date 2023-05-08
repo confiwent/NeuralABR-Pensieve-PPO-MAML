@@ -76,8 +76,7 @@ def get_test_traces():
     return log_save_dir, test_traces, log_path
 
 def run_test(args, video_vmaf_file, video_size_file):
-    log_save_dir, test_traces, log_path = get_test_traces()
-    
+    log_save_dir, test_traces, log_path = get_test_traces() 
     if not os.path.exists(log_save_dir):
         os.mkdir(log_save_dir)
     test_model_ = TEST_MODEL
@@ -91,10 +90,9 @@ def run_test(args, video_vmaf_file, video_size_file):
                                     video_size_file = video_size_file, 
                                     video_psnr_file= video_vmaf_file
                                     )
-
-
     test_env.set_env_info(S_INFO, S_LEN, C_LEN, TOTAL_CHUNK_NUM, VIDEO_BIT_RATE, \
-                            QUALITY_PENALTY, REBUF_PENALTY, SMOOTH_PENALTY_P, SMOOTH_PENALTY_N)
+                            QUALITY_PENALTY, REBUF_PENALTY, \
+                            SMOOTH_PENALTY_P, SMOOTH_PENALTY_N)
     
     test(args, test_model_, test_env, log_path, log_save_dir)
 
@@ -116,7 +114,8 @@ def main():
         # -------- load envs ---
         Train_traces = TRAIN_TRACES
         Valid_traces = TEST_TRACES
-        all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(Valid_traces)
+        all_cooked_time, all_cooked_bw, all_file_names = \
+                                    load_trace.load_trace(Valid_traces)
         valid_env = env_test.Environment(all_cooked_time=all_cooked_time,
                                 all_cooked_bw=all_cooked_bw, 
                                 all_file_names = all_file_names, 
@@ -126,18 +125,21 @@ def main():
         valid_env.set_env_info(S_INFO, S_LEN, C_LEN, TOTAL_CHUNK_NUM, VIDEO_BIT_RATE, \
                     QUALITY_PENALTY, REBUF_PENALTY, SMOOTH_PENALTY_P, SMOOTH_PENALTY_N)
         
-        all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(Train_traces)
+        all_cooked_time, all_cooked_bw, all_file_names = \
+                                            load_trace.load_trace(Train_traces)
         
         train_env = [env.Environment(
                             all_cooked_time=all_cooked_time, 
                             all_cooked_bw=all_cooked_bw,
                             all_file_names = all_file_names, 
                             video_size_file= video_size_file,
-                            video_psnr_file= video_vmaf_file) for _ in range(args.agent_num)]
+                            video_psnr_file= video_vmaf_file) \
+                                for _ in range(args.agent_num)]
         for _ in range(args.agent_num):
             train_env[_].set_env_info(S_INFO, S_LEN, C_LEN, 
                         TOTAL_CHUNK_NUM, VIDEO_BIT_RATE, 
-                        QUALITY_PENALTY, REBUF_PENALTY, SMOOTH_PENALTY_P, SMOOTH_PENALTY_N)
+                        QUALITY_PENALTY, REBUF_PENALTY, 
+                        SMOOTH_PENALTY_P, SMOOTH_PENALTY_N)
 
         if args.a2c:
             train_a2c(args, train_env, valid_env)
