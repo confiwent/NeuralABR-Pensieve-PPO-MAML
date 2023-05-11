@@ -174,13 +174,13 @@ def load_models(path, model_actor, model_critic):
     # model_critic.load_state_dict(params_critic)
     return model_actor.load_state_dict(params_actor), model_critic.load_state_dict(params_critic)
 
-def save_models(logging, summary_dir, add_str, model_actor, vae_net, epoch,
-                max_QoE, mean_value):
-    save_path = summary_dir + '/' + add_str + '/models'
+def save_models_a2c(logging, save_folder, add_str, model_actor, model_critic, epoch,
+                max_QoE, mean_value, max_num=10):
+    save_path = save_folder + '/models'
     if not os.path.exists(save_path): os.system('mkdir ' + save_path)
     
     save_flag = False
-    if len(max_QoE) < 5: # save five models that perform best
+    if len(max_QoE) < max_num: # save five models that perform best
         save_flag = True
         max_QoE[epoch] = mean_value
     elif mean_value > min(max_QoE.values()):
@@ -189,13 +189,13 @@ def save_models(logging, summary_dir, add_str, model_actor, vae_net, epoch,
             if value == min(max_QoE.values()):
                 min_idx = key if key > min_idx else min_idx
 
-        actor_remove_path = summary_dir + '/' + add_str + '/' + 'models' + \
-                        "/%s_%s_%d.model" %(str('policy'), add_str, int(min_idx))
-        vae_remove_path = summary_dir + '/' + add_str + '/' + 'models' + \
-                        "/%s_%s_%d.model" %(str('VAE'), add_str, int(min_idx))
+        actor_remove_path = save_path + \
+                        "/%s_%s_%d.model" %(str('actor'), add_str, int(min_idx))
+        critic_remove_path = save_path + \
+                        "/%s_%s_%d.model" %(str('critic'), add_str, int(min_idx))
         if os.path.exists(actor_remove_path): os.system('rm ' + actor_remove_path)
         # if os.path.exists(critic_save_path): os.system('rm ' + critic_save_path)
-        if os.path.exists(vae_remove_path): os.system('rm ' + vae_remove_path)
+        if os.path.exists(critic_remove_path): os.system('rm ' + critic_remove_path)
 
         save_flag = True
         max_QoE.pop(min_idx)
@@ -204,17 +204,17 @@ def save_models(logging, summary_dir, add_str, model_actor, vae_net, epoch,
     if save_flag:
         logging.info("Model saved in file")
         # save models
-        actor_save_path = summary_dir + '/' + add_str + '/' + 'models' + \
-                            "/%s_%s_%d.model" %(str('policy'), add_str, int(epoch))
+        actor_save_path = save_path + \
+                            "/%s_%s_%d.model" %(str('actor'), add_str, int(epoch))
         # critic_save_path = summary_dir + '/' + add_str + "/%s_%s_%d.model" %(str('critic'), add_str, int(epoch))
-        vae_save_path = summary_dir + '/' + add_str + '/' + 'models' + \
-                            "/%s_%s_%d.model" %(str('VAE'), add_str, int(epoch))
+        critic_save_path = save_path + \
+                            "/%s_%s_%d.model" %(str('critic'), add_str, int(epoch))
         if os.path.exists(actor_save_path): os.system('rm ' + actor_save_path)
         # if os.path.exists(critic_save_path): os.system('rm ' + critic_save_path)
-        if os.path.exists(vae_save_path): os.system('rm ' + vae_save_path)
+        if os.path.exists(critic_save_path): os.system('rm ' + critic_save_path)
         torch.save(model_actor.state_dict(), actor_save_path)
         # torch.save(model_critic.state_dict(), critic_save_path)
-        torch.save(vae_net.state_dict(), vae_save_path)
+        torch.save(model_critic.state_dict(), critic_save_path)
 
 def save_models_comyco(logging, summary_dir, add_str, model_actor, epoch,
                 max_QoE, mean_value):
@@ -261,3 +261,7 @@ def clear_folder(folder_path):
         os.makedirs(folder_path)
     else:
         os.system('rm ' + folder_path +'/*')
+
+def save(actor, critic, path="./"):
+    torch.save(critic.state_dict(), path + "/critic.pt")
+    torch.save(actor.state_dict(), path + "/actor.pt")

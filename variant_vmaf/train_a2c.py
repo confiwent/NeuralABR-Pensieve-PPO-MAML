@@ -1,7 +1,5 @@
-import argparse
-import os, pdb
+import os, pdb, datetime, json, argparse
 import numpy as np
-import random
 from tqdm import tqdm
 
 import torch
@@ -11,12 +9,12 @@ import logging
 from models.model_ac_vmaf import Actor, Critic
 from test_vmaf import valid
 from utils.replay_memory import ReplayMemory
+from utils.helper import save_models_a2c
 
 RANDOM_SEED = 18
 A_DIM = 6
 LEARNING_RATE_ACTOR = 0.0001
 LEARNING_RATE_CRITIC = 0.001
-# TRAIN_SEQ_LEN = 100  # take as a train batch
 VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
 BUFFER_NORM_FACTOR = 10.0
 DB_NORM_FACTOR = 100.0 
@@ -27,15 +25,10 @@ REBUF_PENALTY = 28.79591348
 SMOOTH_PENALTY_P = -0.29797156
 SMOOTH_PENALTY_N = 1.06099887
 DEFAULT_QUALITY = 1  # default video quality without agent
-# RANDOM_SEED = 42
-# GAMMA = 0.90
-# ENTROPY_WEIGHT = 0.99
 UPDATE_INTERVAL = 1000
 RAND_RANGE = 1000
 ENTROPY_EPS = 1e-6
-SUMMARY_DIR = './variant_vmaf/Results/sim/a2c'
-LOG_FILE = './variant_vmaf/Results/sim/a2c/log'
-# TEST_PATH = './models/A3C/BC/360_a3c_240000.model'
+SUMMARY_DIR = './variant_vmaf/Results/sim'
 
 parser = argparse.ArgumentParser(description='a2c_pytorch')
 parser.add_argument('--test', action='store_true', help='Evaluate only')
@@ -46,15 +39,31 @@ dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTe
 
 
 def train_a2c(args, train_env, valid_env):
-    if not os.path.exists(SUMMARY_DIR):
-        os.mkdir(SUMMARY_DIR)
-    logging.basicConfig(filename=LOG_FILE + '_central',
+    # Set-up output directories
+    dt = datetime.datetime.now().strftime('%y%m%d_%H%M')
+    net_desc = '{}_{}'.format(dt, '_'.join(args.name.split()))
+    summary_dir = SUMMARY_DIR
+    save_folder = os.path.join(*[summary_dir, net_desc])
+    if not os.path.exists(save_folder):
+        os.makedirs(save_folder)
+
+    # Save commandline args
+    if args is not None:
+        params_path = os.path.join(save_folder, 'commandline_args.json')
+        with open(params_path, 'w') as f:
+            json.dump(vars(args), f)
+    log_file_name = save_folder + '/log'
+
+    logging.basicConfig(filename=log_file_name + '_central',
                         filemode='w',
                         level=logging.INFO)
     
-    with open(LOG_FILE + '_record', 'w') as log_file, open(LOG_FILE + '_test', 'w') as test_log_file:
+    with open(log_file_name + '_record', 'w') as log_file,\
+            open(log_file_name + '_test', 'w') as test_log_file:
         torch.manual_seed(RANDOM_SEED)
-        s_info, s_len, _, _, _, quality_penalty, rebuffer_penalty, smooth_penalty_p, smooth_penalty_n = train_env[0].get_env_info()
+        s_info, s_len, _, _, _, quality_penalty, \
+            rebuffer_penalty, smooth_penalty_p, smooth_penalty_n = \
+                                                    train_env[0].get_env_info()
 
         model_actor = Actor(A_DIM).type(dtype)
         model_critic = Critic(A_DIM).type(dtype)
@@ -69,14 +78,12 @@ def train_a2c(args, train_env, valid_env):
 
         state = np.zeros((s_info,s_len))
         state = torch.from_numpy(state)
-        last_bit_rate = DEFAULT_QUALITY
         bit_rate = DEFAULT_QUALITY
         default_vmaf = train_env[0].chunk_psnr[DEFAULT_QUALITY][0]
         last_quality = default_vmaf
         # action_vec = np.zeros(A_DIM)
         # action_vec[bit_rate] = 1
 
-        done = True
         epoch = 0
         time_stamp = 0
 
@@ -91,6 +98,9 @@ def train_a2c(args, train_env, valid_env):
         state_ini = [state for _ in range(args.agent_num)]
         last_quality_ini = [last_quality for _ in range(args.agent_num)]
         # bit_rate_ini = [bit_rate for i in range(agent_num)]
+
+        max_QoE = {}
+        max_QoE[0] = -99999
 
         while True:
 
@@ -275,14 +285,13 @@ def train_a2c(args, train_env, valid_env):
 
             if epoch % UPDATE_INTERVAL == 0:
                 logging.info("Model saved in file")
-                _ = valid(args, valid_env, model_actor, epoch, test_log_file, SUMMARY_DIR)
+                mean_value = valid(args, valid_env, model_actor, epoch, test_log_file, save_folder)
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff
-                save(model_actor, model_critic, SUMMARY_DIR)
-
-def save(actor, critic, path="./"):
-    torch.save(critic.state_dict(), path + "/critic.pt")
-    torch.save(actor.state_dict(), path + "/actor.pt")
+                # save(model_actor, model_critic, summary_dir)
+                save_models_a2c(logging, save_folder, \
+                                args.name, model_actor, \
+                                model_critic, epoch, max_QoE, mean_value)
 
 def main():
     train_a2c()
