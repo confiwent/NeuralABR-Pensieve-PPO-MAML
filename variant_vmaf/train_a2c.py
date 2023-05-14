@@ -9,7 +9,7 @@ import logging
 from models.model_ac_vmaf import Actor, Critic
 from test_vmaf import valid
 from utils.replay_memory import ReplayMemory
-from utils.helper import save_models_a2c
+from utils.helper import save_models_a2c, clean_file_cache
 
 RANDOM_SEED = 18
 A_DIM = 6
@@ -25,7 +25,6 @@ REBUF_PENALTY = 28.79591348
 SMOOTH_PENALTY_P = -0.29797156
 SMOOTH_PENALTY_N = 1.06099887
 DEFAULT_QUALITY = 1  # default video quality without agent
-UPDATE_INTERVAL = 1000
 RAND_RANGE = 1000
 ENTROPY_EPS = 1e-6
 SUMMARY_DIR = './variant_vmaf/Results/sim'
@@ -68,6 +67,13 @@ def train_a2c(args, train_env, valid_env):
         model_actor = Actor(A_DIM).type(dtype)
         model_critic = Critic(A_DIM).type(dtype)
 
+        if args.init:
+            init_ckpt_path = os.path.join(*[summary_dir, 'init_ckpt/a2c']) # Notice: ensure the correct model!
+            # agent.load(init_ckpt_path)
+            model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.model"))
+            model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.model"))
+            print("Initilization has done!")
+
         model_actor.train()
         model_critic.train()
 
@@ -84,7 +90,6 @@ def train_a2c(args, train_env, valid_env):
         # action_vec = np.zeros(A_DIM)
         # action_vec[bit_rate] = 1
 
-        epoch = 0
         time_stamp = 0
 
         episode_steps = 20
@@ -102,8 +107,7 @@ def train_a2c(args, train_env, valid_env):
         max_QoE = {}
         max_QoE[0] = -99999
 
-        while True:
-
+        for epoch in range(int(1e7)):
             for agent in range(args.agent_num):
                 states = []
                 actions = []
@@ -276,15 +280,13 @@ def train_a2c(args, train_env, valid_env):
             optimizer_critic.step()
 
             ## test and save the model
-            epoch += 1
             memory.clear()
             logging.info('Epoch: ' + str(epoch) +
                          ' Avg_policy_loss: ' + str(policy_loss.detach().cpu().numpy()) +
                          ' Avg_value_loss: ' + str(critic_loss.detach().cpu().numpy()) +
                          ' Avg_entropy_loss: ' + str(A_DIM * loss_ent.detach().cpu().numpy()))
 
-            if epoch % UPDATE_INTERVAL == 0:
-                logging.info("Model saved in file")
+            if epoch % int(args.valid_i) == 0 and epoch > 0:
                 mean_value = valid(args, valid_env, model_actor, epoch, test_log_file, save_folder)
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff
@@ -292,6 +294,8 @@ def train_a2c(args, train_env, valid_env):
                 save_models_a2c(logging, save_folder, \
                                 args.name, model_actor, \
                                 model_critic, epoch, max_QoE, mean_value)
+            
+            clean_file_cache(log_file, log_file_name + '_record')
 
 def main():
     train_a2c()

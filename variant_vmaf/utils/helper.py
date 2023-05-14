@@ -265,3 +265,9 @@ def clear_folder(folder_path):
 def save(actor, critic, path="./"):
     torch.save(critic.state_dict(), path + "/critic.pt")
     torch.save(actor.state_dict(), path + "/actor.pt")
+
+def clean_file_cache(log_file, file_name, max_file_size=4.096e+7):
+    file_size = os.stat(file_name).st_size
+    if file_size > max_file_size:
+        log_file.seek(0)
+        log_file.truncate()
