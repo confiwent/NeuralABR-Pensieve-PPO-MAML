@@ -29,6 +29,9 @@ TEST_MODEL = './model/ppo/abr_ppo_92000.model'
 TEST_TRACES = './test_traces/'
 TRAIN_TRACES = './cooked_traces/'
 
+TEST_TRACES_ADP = './puffer_adp_0210/test_traces/'
+TRAIN_TRACES_ADP = './puffer_adp_0210/cooked_traces/'
+
 USE_CUDA = torch.cuda.is_available()
 dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 dlongtype = torch.cuda.LongTensor if torch.cuda.is_available() else torch.LongTensor
@@ -76,8 +79,8 @@ def main():
                 torch.cuda.set_device(0) # ID of GPU to be used
                 print("CUDA Device: %d" %torch.cuda.current_device())
         # -------- load envs ---
-        Train_traces = TRAIN_TRACES
-        Valid_traces = TEST_TRACES
+        Train_traces = TRAIN_TRACES if not args.adp else TRAIN_TRACES_ADP
+        Valid_traces = TEST_TRACES if not args.adp else TEST_TRACES_ADP
         all_cooked_time, all_cooked_bw, all_file_names = \
                                     load_trace.load_trace(Valid_traces)
         valid_env = env_test.Environment(all_cooked_time=all_cooked_time,

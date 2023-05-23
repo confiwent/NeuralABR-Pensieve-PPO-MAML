@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 import logging
 from models.model_ac_vmaf import Actor, Critic
-from test_vmaf import valid
+from test_vmaf_v1 import valid
 from utils.replay_memory import ReplayMemory
 from utils.helper import save_models_a2c, clean_file_cache
 
@@ -68,11 +68,18 @@ def train_a2c(args, train_env, valid_env):
         model_critic = Critic(A_DIM).type(dtype)
 
         if args.init:
-            init_ckpt_path = os.path.join(*[summary_dir, 'init_ckpt/a2c']) # Notice: ensure the correct model!
-            # agent.load(init_ckpt_path)
-            model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.model"))
-            model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.model"))
-            print("Initilization has done!")
+            if not args.adp:
+                init_ckpt_path = os.path.join(*[summary_dir, 'init_ckpt/a2c']) # Notice: ensure the correct model!
+                # agent.load(init_ckpt_path)
+                model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.model"))
+                model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.model"))
+                print("Initilization has done!")
+            else:
+                init_ckpt_path = os.path.join(*[summary_dir, 'adp/maml_ini']) # Notice: ensure the correct model!
+                # agent.load(init_ckpt_path)
+                model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.pt"))
+                model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.pt"))
+                print("Initilization for adaptation has done!")
 
         model_actor.train()
         model_critic.train()
@@ -107,7 +114,7 @@ def train_a2c(args, train_env, valid_env):
         max_QoE = {}
         max_QoE[0] = -99999
 
-        for epoch in range(int(1e7)):
+        for epoch in range(int(1e4)):
             for agent in range(args.agent_num):
                 states = []
                 actions = []

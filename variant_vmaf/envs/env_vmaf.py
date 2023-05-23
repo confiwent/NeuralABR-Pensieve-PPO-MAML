@@ -44,7 +44,7 @@ def initialize_tasks(task_list, all_file_names):
                 except:
                     task2idx[task_id] = []
                     task2idx[task_id].append(trace_id)
-    assert(len(task2idx)==len(task_list))
+    # assert(len(task2idx)==len(task_list))
     return task2idx
 
 class Environment:

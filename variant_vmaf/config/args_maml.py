@@ -11,6 +11,8 @@ def get_args(rest_args):
     parser.add_argument('--valid-i', nargs='?', const=1000, default=1000, type=int, help='checkpoint')
     parser.add_argument('--proba', action='store_true', help='Use probabilistic policy')
     parser.add_argument('--init', action='store_true', help='Load the pre-train model parameters')
+    parser.add_argument('--adp', action='store_true', help='Load the adp model parameters')
+    parser.add_argument('--non-acp', action='store_true', help='Not use action pruning')
 
     ## --------- Env configuration ----------
     parser.add_argument('--ro-len', nargs='?', const=50, default=50, type=int, help='Length of roll-out')
