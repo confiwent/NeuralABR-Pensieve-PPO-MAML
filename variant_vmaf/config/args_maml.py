@@ -13,6 +13,8 @@ def get_args(rest_args):
     parser.add_argument('--init', action='store_true', help='Load the pre-train model parameters')
     parser.add_argument('--adp', action='store_true', help='Load the adp model parameters')
     parser.add_argument('--non-acp', action='store_true', help='Not use action pruning')
+    parser.add_argument('--epochT', nargs='?', const=1e7, default=1e7, type=int, help='max training epochs')
+    parser.add_argument('--Ada2c', action='store_true', help='Adapt pensieve policy')
 
     ## --------- Env configuration ----------
     parser.add_argument('--ro-len', nargs='?', const=50, default=50, type=int, help='Length of roll-out')
@@ -46,5 +48,7 @@ def get_args(rest_args):
     parser.add_argument('--tp2', action='store_true', help='Use Puffer2 traces')
     parser.add_argument('--tw', action='store_true', help='Use Wifi traces')
     parser.add_argument('--ti', action='store_true', help='Use intern traces')
+    parser.add_argument('--res-folder', default='test', help='the name of result folder')
+    parser.add_argument('--tr-folder', default='puffer', help='the name of traces folder')
 
     return parser.parse_args(rest_args)

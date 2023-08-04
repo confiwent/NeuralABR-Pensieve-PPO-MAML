@@ -74,11 +74,17 @@ def train_a2c(args, train_env, valid_env):
                 model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.model"))
                 model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.model"))
                 print("Initilization has done!")
+            elif args.Ada2c:
+                init_ckpt_path = os.path.join(*[summary_dir, 'adp/a2c_ini']) # Notice: ensure the correct model!
+                # agent.load(init_ckpt_path)
+                model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.model"))
+                model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.model"))
+                print("Initilization for A2C adaptation has done!")
             else:
                 init_ckpt_path = os.path.join(*[summary_dir, 'adp/maml_ini']) # Notice: ensure the correct model!
                 # agent.load(init_ckpt_path)
-                model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor.pt"))
-                model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic.pt"))
+                model_actor.load_state_dict(torch.load(init_ckpt_path + "/actor_i.pt"))
+                model_critic.load_state_dict(torch.load(init_ckpt_path + "/critic_i.pt"))
                 print("Initilization for adaptation has done!")
 
         model_actor.train()
@@ -114,7 +120,7 @@ def train_a2c(args, train_env, valid_env):
         max_QoE = {}
         max_QoE[0] = -99999
 
-        for epoch in range(int(1e4)):
+        for epoch in range(int(args.epochT)):
             for agent in range(args.agent_num):
                 states = []
                 actions = []
@@ -293,7 +299,7 @@ def train_a2c(args, train_env, valid_env):
                          ' Avg_value_loss: ' + str(critic_loss.detach().cpu().numpy()) +
                          ' Avg_entropy_loss: ' + str(A_DIM * loss_ent.detach().cpu().numpy()))
 
-            if epoch % int(args.valid_i) == 0 and epoch > 0:
+            if epoch % int(args.valid_i) == 0:
                 mean_value = valid(args, valid_env, model_actor, epoch, test_log_file, save_folder)
                 # entropy_weight = 0.95 * entropy_weight
                 ent_coeff = 0.95 * ent_coeff

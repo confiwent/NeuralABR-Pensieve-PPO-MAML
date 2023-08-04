@@ -2,9 +2,15 @@
 
 Re-implementation of existing neural ABR algorithms with Pytorch, same paradigm as Pensieve.
 
-To train the policy with the linear or logarithmic video quality metric, refer to ```./main.py```
+## User guide
 
-To train the policy with perceptual video quality metric, i.e., VMAF, refer to ```./variant_vmaf/main_vmaf.py``` and ```./script/train.sh```
+To train the policy with a __linear or logarithmic__ video quality metric, refer to ```./main.py```
+
+To train the policy with a __perceptual__ video quality metric, i.e., VMAF, refer to ```./variant_vmaf/main_vmaf.py```
+
+> In these files, you can run the Pensive training by ```python main.py --a2c``` or ```python ./variant_vmaf/main_vmaf.py --a2c```. Please refer to ```./script/train.sh``` for more details.
+
+- We also have implemented two variants of Pensieve: Pensieve with PPO algorithm (a well-established DRL method), and Pensieve with MAML algorithm (a meta-reinforcement learning method). You can run their training processes by ```python ./variant_vmaf/main_vmaf.py --ppo``` and ```python ./variant_vmaf/main_vmaf.py --a2br```, respectively.
 
 implemented by pytorch and trained using GPU
 

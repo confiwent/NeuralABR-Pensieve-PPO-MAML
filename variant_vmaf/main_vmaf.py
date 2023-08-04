@@ -28,6 +28,7 @@ LOG_FILE = './variant_vmaf/Results/test/a2c/'
 TEST_MODEL = './model/ppo/abr_ppo_92000.model'
 TEST_TRACES = './test_traces/'
 TRAIN_TRACES = './cooked_traces/'
+TEST_TRACES_DIR = './'
 
 TEST_TRACES_ADP = './puffer_adp_0210/test_traces/'
 TRAIN_TRACES_ADP = './puffer_adp_0210/cooked_traces/'
@@ -79,8 +80,17 @@ def main():
                 torch.cuda.set_device(0) # ID of GPU to be used
                 print("CUDA Device: %d" %torch.cuda.current_device())
         # -------- load envs ---
-        Train_traces = TRAIN_TRACES if not args.adp else TRAIN_TRACES_ADP
-        Valid_traces = TEST_TRACES if not args.adp else TEST_TRACES_ADP
+        # Train_traces = TRAIN_TRACES if not args.adp else TRAIN_TRACES_ADP
+        # Valid_traces = TEST_TRACES if not args.adp else TEST_TRACES_ADP
+        if args.adp:
+            # Train_traces = ADP_TRAIN_TRACES
+            # Valid_traces = ADP_VALID_TRACES
+            trace_folder = args.tr_folder
+            Train_traces = os.path.join(*[TEST_TRACES_DIR, trace_folder, 'cooked_traces/'])
+            Valid_traces = os.path.join(*[TEST_TRACES_DIR, trace_folder, 'test_traces/'])
+        else:
+            Train_traces = TRAIN_TRACES
+            Valid_traces = TEST_TRACES
         all_cooked_time, all_cooked_bw, all_file_names = \
                                     load_trace.load_trace(Valid_traces)
         valid_env = env_test.Environment(all_cooked_time=all_cooked_time,
