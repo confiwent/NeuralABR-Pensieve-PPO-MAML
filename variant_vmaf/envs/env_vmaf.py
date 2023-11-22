@@ -17,22 +17,24 @@ NOISE_LOW = 0.9
 NOISE_HIGH = 1.1
 SAMPLE_NUM = 26
 
+
 def importance_sampling(all_cooked_bw):
     mean_value = [np.mean(i) for i in all_cooked_bw]
 
-    value, base = np.histogram(mean_value, bins= SAMPLE_NUM)
+    value, base = np.histogram(mean_value, bins=SAMPLE_NUM)
 
     sampling_list = []
     for n in range(1, len(base)):
         member = []
         for idx in range(len(mean_value)):
-            if mean_value[idx] > base[n-1] and mean_value[idx] <= base[n]:
+            if mean_value[idx] > base[n - 1] and mean_value[idx] <= base[n]:
                 member.append(idx)
-            if mean_value[idx] == base[n-1]:
+            if mean_value[idx] == base[n - 1]:
                 member.append(idx)
         sampling_list.append(member)
 
     return sampling_list
+
 
 def initialize_tasks(task_list, all_file_names):
     task2idx = {}
@@ -47,12 +49,36 @@ def initialize_tasks(task_list, all_file_names):
     # assert(len(task2idx)==len(task_list))
     return task2idx
 
+
 class Environment:
-    def __init__(self, all_cooked_time, all_cooked_bw, all_file_names, video_size_file, video_psnr_file, random_seed=RANDOM_SEED, a2br = False):
+    def __init__(
+        self,
+        all_cooked_time,
+        all_cooked_bw,
+        all_file_names,
+        video_size_file,
+        video_psnr_file,
+        random_seed=RANDOM_SEED,
+        a2br=False,
+    ):
         assert len(all_cooked_time) == len(all_cooked_bw)
 
         np.random.seed(random_seed)
-        self.task_list = ['bus.ljansbakken', 'car.snaroya', 'ferry.nesoddtangen', 'metro.kalbakken', 'norway_bus', 'norway_car', 'norway_metro', 'norway_train', 'norway_tram', 'amazon', 'yahoo', 'facebook', 'youtube']
+        self.task_list = [
+            "bus.ljansbakken",
+            "car.snaroya",
+            "ferry.nesoddtangen",
+            "metro.kalbakken",
+            "norway_bus",
+            "norway_car",
+            "norway_metro",
+            "norway_train",
+            "norway_tram",
+            "amazon",
+            "yahoo",
+            "facebook",
+            "youtube",
+        ]
 
         self.all_cooked_time = all_cooked_time
         self.all_cooked_bw = all_cooked_bw
@@ -64,7 +90,7 @@ class Environment:
 
         self.video_chunk_counter = 0
         self.buffer_size = 0
-        
+
         self.s_info = 17
         self.s_len = 10
         self.c_len = 3
@@ -102,7 +128,7 @@ class Environment:
                 for line in f:
                     self.video_size[bitrate].append(int(line.split()[0]))
 
-        self.chunk_psnr = {} # video quality of chunks
+        self.chunk_psnr = {}  # video quality of chunks
         for bitrate in range(self.br_dim):
             self.chunk_psnr[bitrate] = []
             with open(video_psnr_file + str(bitrate)) as f:
@@ -130,7 +156,7 @@ class Environment:
 
         self.video_chunk_counter = 0
         self.buffer_size = 0
-    
+
     def set_task(self, idx):
         self.task_id = int(idx)
         idx_member = self.task2idx[self.task_list[self.task_id]]
@@ -144,7 +170,18 @@ class Environment:
         self.task_id = int(0)
 
     # pythran export set_env_info(int, int, int, int, int list, float, float)
-    def set_env_info(self, s_info, s_len, c_len, chunk_num, br_version, qual_p, rebuff_p, smooth_p, smooth_n):
+    def set_env_info(
+        self,
+        s_info,
+        s_len,
+        c_len,
+        chunk_num,
+        br_version,
+        qual_p,
+        rebuff_p,
+        smooth_p,
+        smooth_n,
+    ):
         self.s_info = s_info
         self.s_len = s_len
         self.c_len = c_len
@@ -159,7 +196,17 @@ class Environment:
 
     # pythran export get_env_info(None)
     def get_env_info(self):
-        return self.s_info, self.s_len , self.c_len, self.total_chunk_num, self.bitrate_version, self.qual_p, self.rebuff_p, self.smooth_p, self.smooth_n
+        return (
+            self.s_info,
+            self.s_len,
+            self.c_len,
+            self.total_chunk_num,
+            self.bitrate_version,
+            self.qual_p,
+            self.rebuff_p,
+            self.smooth_p,
+            self.smooth_n,
+        )
 
     def get_video_size(self):
         return self.video_size
@@ -168,7 +215,6 @@ class Environment:
         return self.chunk_psnr
 
     def get_video_chunk(self, quality):
-
         assert quality >= 0
         assert quality < self.br_dim
 
@@ -179,17 +225,17 @@ class Environment:
         video_chunk_counter_sent = 0  # in bytes
 
         while True:  # download video chunk over mahimahi
-            throughput = self.cooked_bw[self.mahimahi_ptr] \
-                         * B_IN_MB / BITS_IN_BYTE
-            duration = self.cooked_time[self.mahimahi_ptr] \
-                       - self.last_mahimahi_time
+            throughput = self.cooked_bw[self.mahimahi_ptr] * B_IN_MB / BITS_IN_BYTE
+            duration = self.cooked_time[self.mahimahi_ptr] - self.last_mahimahi_time
 
             packet_payload = throughput * duration * PACKET_PAYLOAD_PORTION
 
             if video_chunk_counter_sent + packet_payload > video_chunk_size:
-
-                fractional_time = (video_chunk_size - video_chunk_counter_sent) / \
-                                  throughput / PACKET_PAYLOAD_PORTION
+                fractional_time = (
+                    (video_chunk_size - video_chunk_counter_sent)
+                    / throughput
+                    / PACKET_PAYLOAD_PORTION
+                )
                 delay += fractional_time
                 self.last_mahimahi_time += fractional_time
                 break
@@ -225,13 +271,14 @@ class Environment:
             # we need to skip some network bandwidth here
             # but do not add up the delay
             drain_buffer_time = self.buffer_size - BUFFER_THRESH
-            sleep_time = np.ceil(drain_buffer_time / DRAIN_BUFFER_SLEEP_TIME) * \
-                         DRAIN_BUFFER_SLEEP_TIME
+            sleep_time = (
+                np.ceil(drain_buffer_time / DRAIN_BUFFER_SLEEP_TIME)
+                * DRAIN_BUFFER_SLEEP_TIME
+            )
             self.buffer_size -= sleep_time
 
             while True:
-                duration = self.cooked_time[self.mahimahi_ptr] \
-                           - self.last_mahimahi_time
+                duration = self.cooked_time[self.mahimahi_ptr] - self.last_mahimahi_time
                 if duration > sleep_time / MILLISECONDS_IN_SECOND:
                     self.last_mahimahi_time += sleep_time / MILLISECONDS_IN_SECOND
                     break
@@ -266,7 +313,7 @@ class Environment:
             self.buffer_size = 0
             self.video_chunk_counter = 0
             # self.total_chunk_num = random.randint(10, int(self.chunk_length_max))
-            
+
             if self.a2br_flag:
                 idx_member = self.task2idx[self.task_list[self.task_id]]
                 idx_str = np.random.randint(len(idx_member))
@@ -274,9 +321,9 @@ class Environment:
             else:
                 self.trace_idx = np.random.randint(len(self.all_cooked_time))
                 if self.trace_idx >= len(self.all_cooked_time):
-                    self.trace_idx = 0  
-            # 
-            # ===== importance sampling =====    
+                    self.trace_idx = 0
+            #
+            # ===== importance sampling =====
             # if self.idx_location + 1 >= SAMPLE_NUM:
             #     self.idx_location = 0
             # else:
@@ -304,14 +351,16 @@ class Environment:
             next_video_chunk_sizes.append(self.video_size[i][self.video_chunk_counter])
             next_video_chunk_psnrs.append(self.chunk_psnr[i][self.video_chunk_counter])
 
-        return delay, \
-            sleep_time, \
-            return_buffer_size / MILLISECONDS_IN_SECOND, \
-            rebuf / MILLISECONDS_IN_SECOND, \
-            video_chunk_size, \
-            next_video_chunk_sizes, \
-            next_video_chunk_psnrs, \
-            end_of_video, \
-            video_chunk_remain, \
-            curr_chunk_sizes, \
-            curr_chunk_psnrs
+        return (
+            delay,
+            sleep_time,
+            return_buffer_size / MILLISECONDS_IN_SECOND,
+            rebuf / MILLISECONDS_IN_SECOND,
+            video_chunk_size,
+            next_video_chunk_sizes,
+            next_video_chunk_psnrs,
+            end_of_video,
+            video_chunk_remain,
+            curr_chunk_sizes,
+            curr_chunk_psnrs,
+        )
