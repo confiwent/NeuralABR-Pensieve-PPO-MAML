@@ -10,7 +10,7 @@ To train the policy with a __perceptual__ video quality metric, i.e., VMAF, refe
 
 > In these files, you can run the Pensive training by ```python main.py --a2c``` or ```python ./variant_vmaf/main_vmaf.py --a2c```. Please refer to ```./script/train.sh``` for more details.
 
-- We also have implemented two variants of Pensieve: Pensieve with PPO algorithm (a well-established DRL method), and Pensieve with MAML algorithm (a meta-reinforcement learning method). You can run their training processes by ```python ./variant_vmaf/main_vmaf.py --ppo``` and ```python ./variant_vmaf/main_vmaf.py --a2br```, respectively.
+- We also have implemented two variants of Pensieve: Pensieve with A3C algorithm (a well-established DRL method), and Pensieve with MAML algorithm (a meta-reinforcement learning method). You can run their training processes by ```python ./variant_vmaf/main_vmaf.py --a2c``` and ```python ./variant_vmaf/main_vmaf.py --a2br```, respectively.
 
 implemented by pytorch and trained using GPU
 
