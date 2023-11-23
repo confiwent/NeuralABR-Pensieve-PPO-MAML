@@ -48,7 +48,7 @@ class VirtualPlayer:
         self.br_dim = len(self.bitrate_versions)
 
         # QoE reward scaling
-        self.scaling_lb = 4 * self.rebuff_p
+        self.scaling_lb = -4 * self.rebuff_p
         self.scaling_r = self.rebuff_p
 
         # define the state for rl agent
@@ -114,7 +114,7 @@ class VirtualPlayer:
                 - self.rebuff_p * rebuf
                 - self.smooth_p * np.abs(log_bit_rate - log_last_bit_rate)
             )
-        rew_ = float(max(min(reward, self.rebuff_p), self.scaling_lb) / self.scaling_r)
+        rew_ = float(max(reward, self.scaling_lb) / self.scaling_r)
         # reward_norm = self.reward_filter(rew_)
         reward_norm = rew_
 
