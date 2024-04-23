@@ -1,6 +1,6 @@
 # PPO and A2C based adaptive bitrate algorithms (Variants of Pensieve, Pytorch version)
 
-Re-implementation of existing neural ABR algorithms with Pytorch, same paradigm as Pensieve.
+Re-implementation of existing neural ABR algorithms for Video-on-demand services with Pytorch.
 
 ## User guide
 
