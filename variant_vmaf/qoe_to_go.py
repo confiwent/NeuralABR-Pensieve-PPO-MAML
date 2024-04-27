@@ -5,20 +5,21 @@ from torch import nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
+from utils.ema import ExponentialMovingAverage
 
 
 class QoE_predictor_model(nn.Module):
     def __init__(self):
         super().__init__()
         self.QoE_predictor_model = nn.Sequential(
-            nn.Linear(4, 16),
-            nn.ReLU(),
-            nn.Linear(16, 4),
-            nn.ReLU(),
-            nn.Linear(4, 1),
+            nn.Linear(4, 128),
+            nn.LeakyReLU(),
+            nn.Linear(128, 32),
+            nn.LeakyReLU(),
+            nn.Linear(32, 1),
         )
         self.optimizer_inv = torch.optim.Adam(
-            self.QoE_predictor_model.parameters(), lr=1e-4
+            self.QoE_predictor_model.parameters(), lr=1e-5, weight_decay=0.0001
         )
 
     def forward(self, x):
@@ -84,6 +85,8 @@ def get_data_tensor(dataset):
             throughput_mean, throughput_std = get_throughput_char(
                 past_throughputs, throughput_current
             )
+            past_throughputs = np.roll(past_throughputs, -1, axis=1)
+            past_throughputs[0, -1] = throughput_current
             buffer_size = parse[2] / BUFFER_NORM_FACTOR  # 10 sec
             remain_chunks_num = np.minimum(parse[6], total_chunk_num) / float(
                 total_chunk_num
@@ -147,8 +150,10 @@ def get_throughput_char(past_bandwidths, new_bandwidth):
         tuple: A tuple containing the mean and standard deviation of the past bandwidths.
 
     """
-    past_bandwidths_ = np.roll(past_bandwidths, -1, axis=1)[0].tolist()
-    while past_bandwidths_[0] == 0.0:
+    past_bandwidths_ = np.roll(past_bandwidths, -1, axis=1)[0, :]
+    # print(past_bandwidths_)
+    # print(past_bandwidths)
+    while past_bandwidths_[0] == 0.0 and len(past_bandwidths_) > 1:
         past_bandwidths_ = past_bandwidths_[1:]
     past_bandwidths_[-1] = new_bandwidth
 
@@ -172,6 +177,19 @@ def get_training_data(dataset, start_ptr):
     return obs, rtg
 
 
+def load_ema(model, decay=0.999):
+    ema = ExponentialMovingAverage(model.parameters(), decay=decay)
+    return ema
+
+
+def load_batch(batch, device):
+    device_id = f"cuda:{device[0]}" if isinstance(device, list) else device
+    # print(f"GPU-{device_id} is used!")
+    x_b = batch[0].to(device_id)
+    y_b = batch[1].to(device_id)
+    return x_b, y_b
+
+
 class Trainer(object):
     def __init__(self, file_path):
         self.file_path = file_path
@@ -184,31 +202,63 @@ class Trainer(object):
         )
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = QoE_predictor_model().to(self.device)
+        self.ema_q = load_ema(self.model, decay=0.999)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            self.model.optimizer_inv, gamma=0.999
+        )
 
-    def train(self, max_epochs=100):
-        loss_list = []
+    def train(self, max_epochs=200):
+        loss_total_list = []
         for epoch in range(max_epochs):
-            for obs, rtg in self.train_dl:
+            loss_test_list = []
+            loss_train_list = []
+            for _, train_b in enumerate(self.train_dl):
+                obs, rtg = load_batch(train_b, self.device)
                 QoE_pred = self.model(obs)
+                # print(QoE_pred.size(), rtg.size())
+                rtg = rtg.view(-1, 1)
+                # print(QoE_pred.size(), rtg.size())
                 loss = F.mse_loss(QoE_pred, rtg)
                 loss.backward()
 
                 self.model.optimizer_inv.step()
                 self.model.optimizer_inv.zero_grad()
+                self.ema_q.update(self.model.parameters())
+                loss_train_list.append(loss.detach().item())
 
             print(f"epoch ={epoch} ")
-            print(f"{loss:8.6f} \n")
-            loss_list.append(loss.detach().item())
+            loss = sum(loss_train_list) / len(loss_train_list)
+            print(f"training_loss: {loss:8.6f} \n")
+            self.scheduler.step()
 
-        torch.save(self.model.state_dict(), "weights/checkpoint/QoE_predictor.pt")
+            self.model.eval()
+            with torch.no_grad():
+                self.ema_q.store(self.model.parameters())
+                self.ema_q.copy_to(self.model.parameters())
+                for _, test_b in enumerate(self.test_dl):
+                    obs, rtg = load_batch(test_b, self.device)
+                    QoE_pred = self.model(obs)
+                    rtg = rtg.view(-1, 1)
+                    loss_test = F.mse_loss(QoE_pred, rtg)
+                    loss_test_list.append(loss_test.detach().item())
+                self.ema_q.restore(self.model.parameters())
 
-        return loss_list
+            loss = sum(loss_test_list) / len(loss_test_list)
+            print(f"test_loss: {loss:8.6f} \n")
+            loss_total_list.append(loss)
+
+        if epoch % 10 == 0:
+            torch.save(
+                self.model.state_dict(), f"./checkpoints/q2go/Q2GO_pre{epoch}.pt"
+            )
+
+        return loss_total_list
 
 
 def main():
     file_path = "./traces_dataset/oracle8_trajs-3000.pkl"
     trainer = Trainer(file_path)
-    loss_list = trainer.train()
+    loss_list = trainer.train(500)
     plt.plot(loss_list)
     plt.savefig("loss.png")
 

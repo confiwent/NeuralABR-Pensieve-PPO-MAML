@@ -12,7 +12,7 @@ from decision_transformer.evaluation.evaluate_episodes import (
 from decision_transformer.models.decision_transformer import DecisionTransformer
 from decision_transformer.training.seq_trainer import SequenceTrainer
 from decision_transformer.d4rl import get_dataset
-from decision_transformer.qoe_to_go import QoE_predictor_model
+from variant_vmaf.qoe_to_go import QoE_predictor_model
 import matplotlib.pyplot as plt
 
 
