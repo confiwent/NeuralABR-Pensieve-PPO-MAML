@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
 from utils.ema import ExponentialMovingAverage
+from utils.data_loader import get_throughput_char
 
 
 class QoE_predictor_model(nn.Module):
@@ -70,7 +71,7 @@ def get_data_tensor(dataset):
         action = []
         rewards = []
         terminals = []
-        past_throughputs = np.zeros((1, 8))
+        past_throughputs = np.zeros((1, 4))
 
         for _, line in enumerate(log_file):
 
@@ -136,30 +137,6 @@ def get_data_tensor(dataset):
     del train_rtg_np
 
     return train_rtg_tensor, train_obs_tensor
-
-
-def get_throughput_char(past_bandwidths, new_bandwidth):
-    """
-    Calculates the mean and standard deviation of past bandwidths with a new bandwidth.
-
-    Args:
-        past_bandwidths (numpy.ndarray): Array of past bandwidth values.
-        new_bandwidth (float): New bandwidth value to be added to the past bandwidths.
-
-    Returns:
-        tuple: A tuple containing the mean and standard deviation of the past bandwidths.
-
-    """
-    past_bandwidths_ = np.roll(past_bandwidths, -1, axis=1)[0, :]
-    # print(past_bandwidths_)
-    # print(past_bandwidths)
-    while past_bandwidths_[0] == 0.0 and len(past_bandwidths_) > 1:
-        past_bandwidths_ = past_bandwidths_[1:]
-    past_bandwidths_[-1] = new_bandwidth
-
-    bw_mean = np.mean(past_bandwidths_)
-    bw_std = np.std(past_bandwidths_)
-    return bw_mean, bw_std
 
 
 def get_training_data(dataset, start_ptr):
@@ -228,7 +205,7 @@ class Trainer(object):
 
             print(f"epoch ={epoch} ")
             loss = sum(loss_train_list) / len(loss_train_list)
-            print(f"training_loss: {loss:8.6f} \n")
+            print(f"training_loss: {loss:8.6f} \t")
             self.scheduler.step()
 
             self.model.eval()
@@ -247,7 +224,7 @@ class Trainer(object):
             print(f"test_loss: {loss:8.6f} \n")
             loss_total_list.append(loss)
 
-            if epoch % 100 == 0:
+            if (epoch + 1) % 200 == 0:
                 torch.save(
                     self.model.state_dict(), f"./checkpoints/q2go/Q2GO_pre{epoch}.pt"
                 )
@@ -256,7 +233,7 @@ class Trainer(object):
 
 
 def main():
-    file_path = "./traces_dataset/oracle8_trajs-3000.pkl"
+    file_path = "./traces_dataset/oracle8_trajs-6000.pkl"
     trainer = Trainer(file_path)
     loss_list = trainer.train(1000)
     plt.plot(loss_list)

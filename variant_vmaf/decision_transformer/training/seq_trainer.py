@@ -8,12 +8,8 @@ class SequenceTrainer(Trainer):
 
     def train_step(self):
         states, actions, rewards, dones, rtg, timesteps, attention_mask = (
-            self.get_batch(self.batch_size, traj_idx=self.traj_idx)
+            self.get_batch(self.batch_size)
         )
-        self.traj_idx = self.traj_idx + 1
-
-        if self.traj_idx >= 165:
-            self.traj_idx = 0
 
         action_target = torch.clone(actions)
 
@@ -46,9 +42,9 @@ class SequenceTrainer(Trainer):
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.25)
         self.optimizer.step()
 
-        with torch.no_grad():
-            self.diagnostics["training/action_error"] = (
-                torch.mean((action_preds - action_target) ** 2).detach().cpu().item()
-            )
+        # with torch.no_grad():
+        #     self.diagnostics["training/action_error"] = (
+        #         torch.mean((action_preds - action_target) ** 2).detach().cpu().item()
+        #     )
 
         return loss.detach().cpu().item()
