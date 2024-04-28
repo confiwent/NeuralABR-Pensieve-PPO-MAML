@@ -1,8 +1,21 @@
-*.pyc
 
 Results/
-variant_vmaf/Results/
+variant_vmaf/Results/*
+variant_vmaf/checkpoints/*
+variant_vmaf/traces_dataset/*
 
 puffer_adp_0210/
 
 oboe_adp/
+
+# Python byte code
+*.pyc
+
+# Vim
+*.swp
+
+# Mac
+*.DS_Store
+
+# pictures
+*.png

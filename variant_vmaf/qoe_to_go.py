@@ -70,7 +70,7 @@ def get_data_tensor(dataset):
         action = []
         rewards = []
         terminals = []
-        past_throughputs = np.zeros((1, 5))
+        past_throughputs = np.zeros((1, 8))
 
         for _, line in enumerate(log_file):
 
@@ -247,10 +247,10 @@ class Trainer(object):
             print(f"test_loss: {loss:8.6f} \n")
             loss_total_list.append(loss)
 
-        if epoch % 10 == 0:
-            torch.save(
-                self.model.state_dict(), f"./checkpoints/q2go/Q2GO_pre{epoch}.pt"
-            )
+            if epoch % 100 == 0:
+                torch.save(
+                    self.model.state_dict(), f"./checkpoints/q2go/Q2GO_pre{epoch}.pt"
+                )
 
         return loss_total_list
 
@@ -258,7 +258,7 @@ class Trainer(object):
 def main():
     file_path = "./traces_dataset/oracle8_trajs-3000.pkl"
     trainer = Trainer(file_path)
-    loss_list = trainer.train(500)
+    loss_list = trainer.train(1000)
     plt.plot(loss_list)
     plt.savefig("loss.png")
 
