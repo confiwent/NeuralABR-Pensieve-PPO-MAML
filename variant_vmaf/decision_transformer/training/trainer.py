@@ -43,7 +43,7 @@ class Trainer:
 
         logs["time/training"] = time.time() - train_start
 
-        torch.save(self.model.state_dict(), "dd_model.pt")
+        torch.save(self.model.state_dict(), "./checkpoints/dt_model.pt")
         # eval_start = time.time()
         # self.model.eval()
         # for eval_fn in self.eval_fns:

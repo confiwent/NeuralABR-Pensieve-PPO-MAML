@@ -13,9 +13,9 @@ from decision_transformer.models.decision_transformer import DecisionTransformer
 from decision_transformer.training.seq_trainer import SequenceTrainer
 
 # from decision_transformer.d4rl import get_dataset
-from variant_vmaf.qoe_to_go import QoE_predictor_model
+from qoe_to_go import QoE_predictor_model
 import matplotlib.pyplot as plt
-from variant_vmaf.utils.data_loader import get_trajs
+from utils.data_loader import get_trajs
 
 
 def discount_cumsum(x, gamma):
@@ -45,7 +45,7 @@ def experiment(variant):
     q2go_model.eval()
 
     dataset_path = variant["traj_path"]
-    trajectories = get_trajs(dataset_path, q2go_model)
+    trajectories = get_trajs(dataset_path, q2go_model, device)
 
     # save all path information into separate lists
     states = np.concatenate(trajectories["observations"], axis=0)

@@ -28,18 +28,18 @@ def get_throughput_char(past_bandwidths, new_bandwidth):
     return bw_mean, bw_std
 
 
-def get_qoe2go_estimation(obs, q2go_model):
+def get_qoe2go_estimation(obs, q2go_model, device="cpu"):
     obs_np = np.asarray(obs)
     del obs
-    del obs_np
 
-    obs_tensor = torch.tensor(obs_np, dtype=torch.float32).to(q2go_model.device)
+    obs_tensor = torch.tensor(obs_np, dtype=torch.float32).to(device)
+    del obs_np
     with torch.no_grad():
         QoE_pred = q2go_model(obs_tensor)
     return QoE_pred.cpu().numpy()[0]
 
 
-def get_trajs(data_path, q2go_model):
+def get_trajs(data_path, q2go_model, device="cpu"):
 
     keys_list = ["observations", "actions", "rewards", "terminals", "returns"]
     ACTION_SELECTED = [300, 750, 1200, 1850, 2850, 4300]
@@ -89,9 +89,9 @@ def get_trajs(data_path, q2go_model):
             )
 
             q2go_obs = [throughput_mean, throughput_std, buffer_size, remain_chunks_num]
-            q2go_estimation = get_qoe2go_estimation(q2go_obs, q2go_model)
+            q2go_estimation = get_qoe2go_estimation(q2go_obs, q2go_model, device)
 
-            state = np.zeros((11))
+            state = np.zeros((16))
 
             state[0] = parse[4] / parse[5] / M_IN_K  # kilo byte / ms
             state[1] = float(parse[2] / BUFFER_NORM_FACTOR)  # 10 sec
