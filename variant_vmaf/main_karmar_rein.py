@@ -49,7 +49,7 @@ def experiment(variant):
 
     # save all path information into separate lists
     states = np.concatenate(trajectories["observations"], axis=0)
-    state_mean, state_std = np.mean(states, axis=0), np.std(states, axis=0) + 1e-6
+    # state_mean, state_std = np.mean(states, axis=0), np.std(states, axis=0) + 1e-6
 
     state_dim = states.shape[1]
     act_dim = trajectories["actions"][0].shape[1]
@@ -105,7 +105,7 @@ def experiment(variant):
             s[-1] = np.concatenate(
                 [np.zeros((1, max_len - tlen, state_dim)), s[-1]], axis=1
             )
-            s[-1] = (s[-1] - state_mean) / state_std
+            # s[-1] = (s[-1] - state_mean) / state_std
             a[-1] = np.concatenate(
                 [np.ones((1, max_len - tlen, act_dim)) * 1, a[-1]], axis=1
             )
