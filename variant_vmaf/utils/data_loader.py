@@ -93,16 +93,20 @@ def get_trajs(data_path, q2go_model, device="cpu"):
 
             state = np.zeros((16))
 
-            state[0] = parse[4] / parse[5] / M_IN_K  # kilo byte / ms
-            state[1] = float(parse[2] / BUFFER_NORM_FACTOR)  # 10 sec
+            state[0] = parse[4] / parse[5] / M_IN_K  # kilo byte / ms # throughput
+            state[1] = float(parse[2] / BUFFER_NORM_FACTOR)  # 10 sec # buffer size
             # last quality
             # state[2] = parse[1] / float(np.max(ACTION_SELECTED))
-            state[2] = parse[5] / M_IN_K
-            state[3] = np.minimum(parse[6], total_chunk_num) / float(total_chunk_num)
-            state[4 : 4 + a_dim] = np.array(parse[7:13]) / M_IN_K / M_IN_K  # mega byte
+            state[2] = parse[5] / M_IN_K  # chunk download time
+            state[3] = np.minimum(parse[6], total_chunk_num) / float(
+                total_chunk_num
+            )  # fraction of remaining chunks
+            state[4 : 4 + a_dim] = (
+                np.array(parse[7:13]) / M_IN_K / M_IN_K
+            )  # next chunk sizes
             state[4 + a_dim : 4 + 2 * a_dim] = (
                 np.array(parse[13:19]) / 100
-            )  # vmaf values [0, 100]
+            )  # vmaf values [0, 100] # next chunk vmaf values
 
             observations.append(state)
             rewards.append(parse[-1])

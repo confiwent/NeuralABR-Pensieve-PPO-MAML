@@ -242,7 +242,7 @@ if __name__ == "__main__":
     )  # normal for standard setting, delayed for sparse
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--pct_traj", type=float, default=1.0)
-    parser.add_argument("--batch_size", type=int, default=2560)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--embed_dim", type=int, default=32)
     parser.add_argument("--n_layer", type=int, default=3)
     parser.add_argument("--n_head", type=int, default=1)

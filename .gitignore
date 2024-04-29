@@ -1,6 +1,7 @@
 
 Results/
 variant_vmaf/Results/*
+variant_vmaf/results_valid/*
 variant_vmaf/checkpoints/*
 variant_vmaf/traces_dataset/*
 
