@@ -44,17 +44,19 @@ class Trainer:
         logs["time/training"] = time.time() - train_start
 
         torch.save(self.model.state_dict(), "./checkpoints/dt/dt_model.pt")
-        # eval_start = time.time()
-        # self.model.eval()
+        eval_start = time.time()
+        self.model.eval()
         # for eval_fn in self.eval_fns:
-        #     outputs = eval_fn(self.model)
+        output_mean, output_std = self.eval_fns(self.model)
         #     for k, v in outputs.items():
         #         logs[f'evaluation/{k}'] = v
 
-        # logs['time/total'] = time.time() - self.start_time
-        # logs['time/evaluation'] = time.time() - eval_start
+        logs["time/total"] = time.time() - self.start_time
+        logs["time/evaluation"] = time.time() - eval_start
         logs["training/train_loss_mean"] = np.mean(train_losses)
         logs["training/train_loss_std"] = np.std(train_losses)
+        logs["evaluation/valid_QoE_mean"] = output_mean
+        logs["evaluation/valid_QoE_std"] = output_std
 
         # for k in self.diagnostics:
         #     logs[k] = self.diagnostics[k]

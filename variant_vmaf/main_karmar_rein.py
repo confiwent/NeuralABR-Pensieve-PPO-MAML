@@ -5,10 +5,7 @@ import torch.nn.functional as F
 
 import argparse
 import random
-from decision_transformer.evaluation.evaluate_episodes import (
-    evaluate_episode,
-    evaluate_episode_rtg,
-)
+from decision_transformer.evaluation.evaluate_episodes import evaluate_episode_abr
 from decision_transformer.models.decision_transformer import DecisionTransformer
 from decision_transformer.training.seq_trainer import SequenceTrainer
 
@@ -16,6 +13,8 @@ from decision_transformer.training.seq_trainer import SequenceTrainer
 from qoe_to_go import QoE_predictor_model
 import matplotlib.pyplot as plt
 from utils.data_loader import get_trajs
+import envs.fixed_env_vmaf as env_test
+from utils import load_trace
 
 
 def discount_cumsum(x, gamma):
@@ -150,34 +149,39 @@ def experiment(variant):
     max_ep_len = 512
     mode = variant.get("mode", "normal")
 
-    def eval_episodes(target_rew):
+    def eval_episodes():
+        test_traces = "../test_traces/"
+        log_save_dir = "./results_valid/"
+        if not os.path.exists(log_save_dir):
+            os.mkdir(log_save_dir)
+        log_path_ini = log_save_dir + "log_test_karmar"
+
+        video_size_file = "../video_size/ori/video_size_"  # video = 'origin'
+        video_vmaf_file = "./video_vmaf/chunk_vmaf"
+
+        all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(
+            test_traces
+        )
+        test_env = env_test.Environment(
+            all_cooked_time=all_cooked_time,
+            all_cooked_bw=all_cooked_bw,
+            all_file_names=all_file_names,
+            video_size_file=video_size_file,
+            video_psnr_file=video_vmaf_file,
+        )
+
         def fn(model):
-            returns, lengths = [], []
-            for _ in range(num_eval_episodes):
-                with torch.no_grad():
+            qoe_mean, qoe_std = evaluate_episode_abr(
+                test_env,
+                model,
+                q2go_model,
+                log_path_ini,
+                device,
+                state_dim,
+                log_save_dir,
+            )
 
-                    ret, length = evaluate_episode_rtg(
-                        env,
-                        state_dim,
-                        act_dim,
-                        model,
-                        max_ep_len=max_ep_len,
-                        scale=scale,
-                        target_return=target_rew / scale,
-                        mode=mode,
-                        state_mean=state_mean,
-                        state_std=state_std,
-                        device=device,
-                    )
-
-                returns.append(ret)
-                lengths.append(length)
-            return {
-                f"target_{target_rew}_return_mean": np.mean(returns),
-                f"target_{target_rew}_return_std": np.std(returns),
-                f"target_{target_rew}_length_mean": np.mean(lengths),
-                f"target_{target_rew}_length_std": np.std(lengths),
-            }
+            return qoe_mean, qoe_std
 
         return fn
 
@@ -218,17 +222,19 @@ def experiment(variant):
         scheduler=scheduler,
         # loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),
         loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: F.cross_entropy(a_hat, a.long()),
-        # eval_fns=[eval_episodes(tar) for tar in env_targets],
+        eval_fns=eval_episodes(),
     )
 
-    loss_list = []
+    train_loss_list = []
+    test_QoE_list = []
     for iter in range(variant["max_iters"]):
         outputs = trainer.train_iteration(
             num_steps=variant["num_steps_per_iter"], iter_num=iter + 1, print_logs=True
         )
-        loss_list.append(outputs["training/train_loss_mean"])
+        train_loss_list.append(outputs["training/train_loss_mean"])
+        test_QoE_list.append(outputs["evaluation/valid_QoE_mean"])
 
-    return loss_list
+    return train_loss_list, test_QoE_list
 
 
 if __name__ == "__main__":
@@ -242,7 +248,7 @@ if __name__ == "__main__":
     )  # normal for standard setting, delayed for sparse
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--pct_traj", type=float, default=1.0)
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--batch_size", type=int, default=2560)
     parser.add_argument("--embed_dim", type=int, default=32)
     parser.add_argument("--n_layer", type=int, default=3)
     parser.add_argument("--n_head", type=int, default=1)
@@ -252,8 +258,8 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", "-wd", type=float, default=1e-3)
     parser.add_argument("--warmup_steps", type=int, default=1e5)
     parser.add_argument("--num_eval_episodes", type=int, default=100)
-    parser.add_argument("--max_iters", type=int, default=200)
-    parser.add_argument("--num_steps_per_iter", type=int, default=100)
+    parser.add_argument("--max_iters", type=int, default=500)
+    parser.add_argument("--num_steps_per_iter", type=int, default=1000)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument(
         "--traj_path", type=str, default="./traces_dataset/oracle8_trajs-6000.pkl"
@@ -266,7 +272,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    loss_list = experiment(variant=vars(args))
+    loss_list_train, loss_list_test = experiment(variant=vars(args))
 
-    plt.plot(loss_list)
-    plt.savefig("loss_exp.png")
+    plt.plot(loss_list_train)
+    plt.savefig("loss_exp_train.png")
+    plt.plot(loss_list_test)
+    plt.savefig("loss_QoE_valid.png")
