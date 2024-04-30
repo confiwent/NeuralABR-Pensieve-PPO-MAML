@@ -14,6 +14,7 @@ class Trainer:
         get_batch,
         loss_fn,
         scheduler=None,
+        ema=None,
         eval_fns=None,
     ):
         self.model = model
@@ -22,6 +23,7 @@ class Trainer:
         self.get_batch = get_batch
         self.loss_fn = loss_fn
         self.scheduler = scheduler
+        self.ema = ema
         self.eval_fns = [] if eval_fns is None else eval_fns
         self.diagnostics = dict()
         self.traj_idx = 0
@@ -38,18 +40,25 @@ class Trainer:
         for _ in range(num_steps):
             train_loss = self.train_step()
             train_losses.append(train_loss)
-            if self.scheduler is not None:
-                self.scheduler.step()
+            if self.ema is not None:
+                self.ema.update(self.model.parameters())
+        if self.scheduler is not None:
+            self.scheduler.step()
 
         logs["time/training"] = time.time() - train_start
 
         torch.save(self.model.state_dict(), "./checkpoints/dt/dt_model.pt")
         eval_start = time.time()
         self.model.eval()
+        if self.ema is not None:
+            self.ema.store(self.model.parameters())
+            self.ema.copy_to(self.model.parameters())
         # for eval_fn in self.eval_fns:
         output_mean, output_std = self.eval_fns(self.model)
         #     for k, v in outputs.items():
         #         logs[f'evaluation/{k}'] = v
+        if self.ema is not None:
+            self.ema.restore(self.model.parameters())
 
         logs["time/total"] = time.time() - self.start_time
         logs["time/evaluation"] = time.time() - eval_start

@@ -10,11 +10,17 @@ from decision_transformer.models.decision_transformer import DecisionTransformer
 from decision_transformer.training.seq_trainer import SequenceTrainer
 
 # from decision_transformer.d4rl import get_dataset
+from utils.ema import ExponentialMovingAverage
 from qoe_to_go import QoE_predictor_model
 import matplotlib.pyplot as plt
 from utils.data_loader import get_trajs
 import envs.fixed_env_vmaf as env_test
 from utils import load_trace
+
+
+def load_ema(model, decay=0.999):
+    ema = ExponentialMovingAverage(model.parameters(), decay=decay)
+    return ema
 
 
 def discount_cumsum(x, gamma):
@@ -214,12 +220,15 @@ def experiment(variant):
         optimizer, lambda steps: min((steps + 1) / warmup_steps, 1)
     )
 
+    ema_dt = load_ema(model, decay=0.999)
+
     trainer = SequenceTrainer(
         model=model,
         optimizer=optimizer,
         batch_size=batch_size,
         get_batch=get_batch,
         scheduler=scheduler,
+        ema=ema_dt,
         # loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),
         loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: F.cross_entropy(a_hat, a.long()),
         eval_fns=eval_episodes(),
@@ -248,8 +257,8 @@ if __name__ == "__main__":
     )  # normal for standard setting, delayed for sparse
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--pct_traj", type=float, default=1.0)
-    parser.add_argument("--batch_size", type=int, default=2560)
-    parser.add_argument("--embed_dim", type=int, default=32)
+    parser.add_argument("--batch_size", type=int, default=512)
+    parser.add_argument("--embed_dim", type=int, default=128)
     parser.add_argument("--n_layer", type=int, default=3)
     parser.add_argument("--n_head", type=int, default=1)
     parser.add_argument("--activation_function", type=str, default="relu")
@@ -258,11 +267,11 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", "-wd", type=float, default=1e-3)
     parser.add_argument("--warmup_steps", type=int, default=1e5)
     parser.add_argument("--num_eval_episodes", type=int, default=100)
-    parser.add_argument("--max_iters", type=int, default=500)
-    parser.add_argument("--num_steps_per_iter", type=int, default=1000)
+    parser.add_argument("--max_iters", type=int, default=2000)
+    parser.add_argument("--num_steps_per_iter", type=int, default=50)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument(
-        "--traj_path", type=str, default="./traces_dataset/oracle8_trajs-6000.pkl"
+        "--traj_path", type=str, default="./traces_dataset/oracle8_trajs-12000.pkl"
     )
     parser.add_argument(
         "--q2go_cpt",
