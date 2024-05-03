@@ -26,6 +26,7 @@ class Trainer:
         self.ema = ema
         self.eval_fns = [] if eval_fns is None else eval_fns
         self.diagnostics = dict()
+        self.qoe_list = []
         self.traj_idx = 0
         self.start_time = time.time()
 
@@ -47,7 +48,6 @@ class Trainer:
 
         logs["time/training"] = time.time() - train_start
 
-        torch.save(self.model.state_dict(), "./checkpoints/dt/dt_model.pt")
         eval_start = time.time()
         self.model.eval()
         if self.ema is not None:
@@ -55,6 +55,11 @@ class Trainer:
             self.ema.copy_to(self.model.parameters())
         # for eval_fn in self.eval_fns:
         output_mean, output_std = self.eval_fns(self.model)
+        if self.qoe_list is None or output_mean >= max(self.qoe_list):
+            torch.save(
+                self.model.state_dict(), f"./checkpoints/dt/dt_model_{iter_num}.pt"
+            )
+            self.qoe_list.append(output_mean)
         #     for k, v in outputs.items():
         #         logs[f'evaluation/{k}'] = v
         if self.ema is not None:

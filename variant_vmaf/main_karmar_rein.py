@@ -257,18 +257,18 @@ if __name__ == "__main__":
     )  # normal for standard setting, delayed for sparse
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--pct_traj", type=float, default=1.0)
-    parser.add_argument("--batch_size", type=int, default=512)
+    parser.add_argument("--batch_size", type=int, default=2560)
     parser.add_argument("--embed_dim", type=int, default=128)
     parser.add_argument("--n_layer", type=int, default=3)
     parser.add_argument("--n_head", type=int, default=1)
     parser.add_argument("--activation_function", type=str, default="relu")
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--learning_rate", "-lr", type=float, default=1e-4)
+    parser.add_argument("--learning_rate", "-lr", type=float, default=1e-5)
     parser.add_argument("--weight_decay", "-wd", type=float, default=1e-3)
     parser.add_argument("--warmup_steps", type=int, default=1e5)
     parser.add_argument("--num_eval_episodes", type=int, default=100)
-    parser.add_argument("--max_iters", type=int, default=2000)
-    parser.add_argument("--num_steps_per_iter", type=int, default=50)
+    parser.add_argument("--max_iters", type=int, default=1000)
+    parser.add_argument("--num_steps_per_iter", type=int, default=512)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument(
         "--traj_path", type=str, default="./traces_dataset/oracle8_trajs-12000.pkl"
