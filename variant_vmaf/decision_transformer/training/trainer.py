@@ -26,7 +26,7 @@ class Trainer:
         self.ema = ema
         self.eval_fns = [] if eval_fns is None else eval_fns
         self.diagnostics = dict()
-        self.qoe_list = []
+        self.qoe_list = [-9999]
         self.traj_idx = 0
         self.start_time = time.time()
 
@@ -55,7 +55,7 @@ class Trainer:
             self.ema.copy_to(self.model.parameters())
         # for eval_fn in self.eval_fns:
         output_mean, output_std = self.eval_fns(self.model)
-        if self.qoe_list is None or output_mean >= max(self.qoe_list):
+        if output_mean >= max(self.qoe_list):
             torch.save(
                 self.model.state_dict(), f"./checkpoints/dt/dt_model_{iter_num}.pt"
             )
