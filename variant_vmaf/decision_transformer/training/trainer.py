@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-import time
+import time, os
 
 
 class Trainer:
@@ -15,6 +15,7 @@ class Trainer:
         loss_fn,
         scheduler=None,
         ema=None,
+        ts=None,
         eval_fns=None,
     ):
         self.model = model
@@ -29,6 +30,9 @@ class Trainer:
         self.qoe_list = [-9999]
         self.traj_idx = 0
         self.start_time = time.time()
+        self.ts = ts
+        if os.path.exists(f"./checkpoints/dt_{self.ts}") is False:
+            os.mkdir(f"./checkpoints/dt_{self.ts}")
 
     def train_iteration(self, num_steps, iter_num=0, print_logs=False):
 
@@ -57,7 +61,8 @@ class Trainer:
         output_mean, output_std = self.eval_fns(self.model)
         if output_mean >= max(self.qoe_list):
             torch.save(
-                self.model.state_dict(), f"./checkpoints/dt/dt_model_{iter_num}.pt"
+                self.model.state_dict(),
+                f"./checkpoints/dt_{self.ts}/dt_model_{iter_num}.pt",
             )
             self.qoe_list.append(output_mean)
         #     for k, v in outputs.items():

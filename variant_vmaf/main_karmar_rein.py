@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import os
+import os, time
 import torch.nn.functional as F
 
 import argparse
@@ -154,6 +154,7 @@ def experiment(variant):
     env_targets = [3600, 1800]
     max_ep_len = 512
     mode = variant.get("mode", "normal")
+    ts = time.strftime("%b%d-%H-%M-%S", time.gmtime())
 
     def eval_episodes():
         test_traces = "../test_traces/"
@@ -208,6 +209,9 @@ def experiment(variant):
     )
 
     model = model.to(device=device)
+    ini_checkpoint_path = "./checkpoints/init/dt_model_ini.pt"
+    if ini_checkpoint_path is not None:
+        model.load_state_dict(torch.load(ini_checkpoint_path))
 
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -229,6 +233,7 @@ def experiment(variant):
         get_batch=get_batch,
         scheduler=scheduler,
         ema=ema_dt,
+        ts=ts,
         # loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),
         loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: F.cross_entropy(a_hat, a.long()),
         eval_fns=eval_episodes(),
@@ -268,7 +273,7 @@ if __name__ == "__main__":
     parser.add_argument("--warmup_steps", type=int, default=1e5)
     parser.add_argument("--num_eval_episodes", type=int, default=100)
     parser.add_argument("--max_iters", type=int, default=1000)
-    parser.add_argument("--num_steps_per_iter", type=int, default=512)
+    parser.add_argument("--num_steps_per_iter", type=int, default=256)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument(
         "--traj_path", type=str, default="./traces_dataset/oracle8_trajs-12000.pkl"
