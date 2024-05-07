@@ -8,7 +8,7 @@ BUFFER_NORM_FACTOR = 10.0
 EPSILON = 14
 
 
-def results_analysis(log_dir):
+def results_analysis(log_dir, ini=4):
     rewards = []
     test_log_folder = log_dir
     test_log_files = os.listdir(test_log_folder)
@@ -21,7 +21,7 @@ def results_analysis(log_dir):
                     reward.append(float(parse[-1]))
                 except IndexError:
                     break
-        rewards.append(np.mean(reward[1:]))
+        rewards.append(np.mean(reward[ini:]))
 
     rewards = np.array(rewards)
 
