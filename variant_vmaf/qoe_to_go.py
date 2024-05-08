@@ -170,7 +170,7 @@ def load_batch(batch, device):
 class Trainer(object):
     def __init__(self, file_path):
         self.file_path = file_path
-        self.batch_size = 1000
+        self.batch_size = 2048
         self.test_split = 0.2
         self.train_dl, self.test_dl = dataloader(
             self.batch_size,
@@ -224,20 +224,25 @@ class Trainer(object):
             print(f"test_loss: {loss:8.6f} \n")
             loss_total_list.append(loss)
 
-            if (epoch + 1) % 200 == 0:
+            if (epoch + 1) % 100 == 0:
                 torch.save(
-                    self.model.state_dict(), f"./checkpoints/q2go/Q2GO_pre{epoch}.pt"
+                    self.model.state_dict(),
+                    f"./checkpoints/q2go/Q2GO_oracle_pre{epoch}.pt",
                 )
+            plt.plot(loss_total_list)
+            plt.savefig("loss_qoe2go_oracle.png")
+            plt.clf()
 
         return loss_total_list
 
 
 def main():
-    file_path = "./traces_dataset/oracle8_trajs-6000.pkl"
+    file_path = "./traces_dataset/oracle8_trajs-15000.pkl"
+    # file_path = "./traces_dataset/rmpc5_trajs-15000.pkl"
     trainer = Trainer(file_path)
     loss_list = trainer.train(1000)
     plt.plot(loss_list)
-    plt.savefig("loss.png")
+    plt.savefig("loss_qoe2go_oracle.png")
 
 
 if __name__ == "__main__":

@@ -20,3 +20,6 @@ oboe_adp/
 
 # pictures
 *.png
+
+# log files
+*.log

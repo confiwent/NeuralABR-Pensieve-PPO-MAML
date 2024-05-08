@@ -209,7 +209,8 @@ def experiment(variant):
     )
 
     model = model.to(device=device)
-    ini_checkpoint_path = "./checkpoints/init/dt_model_ini.pt"
+    # ini_checkpoint_path = "./checkpoints/init/dt_model_ini_rmpc.pt"  # variant_vmaf/checkpoints/init/dt_model_ini_rmpc.pt
+    ini_checkpoint_path = None
     if ini_checkpoint_path is not None:
         model.load_state_dict(torch.load(ini_checkpoint_path))
 
@@ -248,6 +249,13 @@ def experiment(variant):
         train_loss_list.append(outputs["training/train_loss_mean"])
         test_QoE_list.append(outputs["evaluation/valid_QoE_mean"])
 
+        plt.plot(train_loss_list)
+        plt.savefig("loss_exp_train.png")
+        plt.clf()
+        plt.plot(test_QoE_list)
+        plt.savefig("loss_QoE_valid.png")
+        plt.clf()
+
     return train_loss_list, test_QoE_list
 
 
@@ -262,26 +270,26 @@ if __name__ == "__main__":
     )  # normal for standard setting, delayed for sparse
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--pct_traj", type=float, default=1.0)
-    parser.add_argument("--batch_size", type=int, default=2560)
+    parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--embed_dim", type=int, default=128)
     parser.add_argument("--n_layer", type=int, default=3)
     parser.add_argument("--n_head", type=int, default=1)
     parser.add_argument("--activation_function", type=str, default="relu")
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--learning_rate", "-lr", type=float, default=1e-5)
+    parser.add_argument("--learning_rate", "-lr", type=float, default=1e-3)
     parser.add_argument("--weight_decay", "-wd", type=float, default=1e-3)
     parser.add_argument("--warmup_steps", type=int, default=1e5)
     parser.add_argument("--num_eval_episodes", type=int, default=100)
-    parser.add_argument("--max_iters", type=int, default=1000)
-    parser.add_argument("--num_steps_per_iter", type=int, default=256)
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--max_iters", type=int, default=5000)
+    parser.add_argument("--num_steps_per_iter", type=int, default=512)
+    parser.add_argument("--device", type=str, default="cuda:1")
     parser.add_argument(
-        "--traj_path", type=str, default="./traces_dataset/oracle8_trajs-12000.pkl"
+        "--traj_path", type=str, default="./traces_dataset/rmpc5_trajs-15000.pkl"
     )
     parser.add_argument(
         "--q2go_cpt",
         type=str,
-        default="./checkpoints/q2go/Q2GO_predictor.pt",
+        default="./checkpoints/q2go/Q2GO_rmpc5_predictor.pt",
     )
 
     args = parser.parse_args()
