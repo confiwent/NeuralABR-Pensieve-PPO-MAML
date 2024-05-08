@@ -15,6 +15,8 @@ SMOOTH_PENALTY_N = 1.06099887
 
 def evaluate_episode_abr(test_env, dt_model, q2go_model, log_path_ini, device, s_dim=S_DIM, log_dir='./results_valid/'):
     DEFAULT_QUALITY = 1
+    test_env.set_env_info(0, 0, 0, TOTAL_CHUNK_NUM, VIDEO_BIT_RATE, \
+                            QUALITY_PENALTY, REBUF_PENALTY, SMOOTH_PENALTY_P, SMOOTH_PENALTY_N)
     bit_rate = DEFAULT_QUALITY
     last_bit_rate = DEFAULT_QUALITY
     last_quality = test_env.chunk_psnr[DEFAULT_QUALITY][0]
