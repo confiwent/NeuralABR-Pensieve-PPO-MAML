@@ -62,7 +62,7 @@ class Trainer:
         if output_mean >= max(self.qoe_list):
             torch.save(
                 self.model.state_dict(),
-                f"./checkpoints/dt_{self.ts}/dt_model_{iter_num}.pt",
+                f"./checkpoints/dt_{self.ts}/dt_model_{iter_num}_r{output_mean}.pt",
             )
             self.qoe_list.append(output_mean)
         #     for k, v in outputs.items():
