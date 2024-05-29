@@ -76,8 +76,6 @@ class Trainer:
 
             logs["time/total"] = time.time() - self.start_time
             logs["time/evaluation"] = time.time() - eval_start
-            logs["evaluation/valid_QoE_mean"] = output_mean
-            logs["evaluation/valid_QoE_std"] = output_std
 
             # for k in self.diagnostics:
             #     logs[k] = self.diagnostics[k]
@@ -87,6 +85,9 @@ class Trainer:
                 print(f"Iteration {iter_num}")
                 for k, v in logs.items():
                     print(f"{k}: {v}")
+
+        logs["evaluation/valid_QoE_mean"] = output_mean
+        logs["evaluation/valid_QoE_std"] = output_std
 
         return logs
 
