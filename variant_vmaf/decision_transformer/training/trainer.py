@@ -30,6 +30,8 @@ class Trainer:
         self.qoe_list = [-9999]
         self.traj_idx = 0
         self.start_time = time.time()
+        self.current_valid_q_mean = -9999
+        self.current_valid_q_std = -9999
         self.ts = ts
         if os.path.exists(f"./checkpoints/dt_{self.ts}") is False:
             os.mkdir(f"./checkpoints/dt_{self.ts}")
@@ -63,6 +65,8 @@ class Trainer:
                 self.ema.copy_to(self.model.parameters())
             # for eval_fn in self.eval_fns:
             output_mean, output_std = self.eval_fns(self.model)
+            self.current_valid_q_mean = output_mean
+            self.current_valid_q_std = output_std
             if output_mean >= max(self.qoe_list):
                 torch.save(
                     self.model.state_dict(),
@@ -86,8 +90,8 @@ class Trainer:
                 for k, v in logs.items():
                     print(f"{k}: {v}")
 
-        logs["evaluation/valid_QoE_mean"] = output_mean
-        logs["evaluation/valid_QoE_std"] = output_std
+        logs["evaluation/valid_QoE_mean"] = self.current_valid_q_mean
+        logs["evaluation/valid_QoE_std"] = self.current_valid_q_mean
 
         return logs
 
