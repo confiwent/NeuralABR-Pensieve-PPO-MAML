@@ -154,7 +154,7 @@ def experiment(variant):
     env_targets = [3600, 1800]
     max_ep_len = 512
     mode = variant.get("mode", "normal")
-    ts = time.strftime("%b%d-%H-%M-%S", time.gmtime())
+    ts = time.strftime("%b%d-%H-%M-%S", time.gmtime()) + "o"
 
     def eval_episodes():
         test_traces = "../test_traces/"
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     )  # normal for standard setting, delayed for sparse
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--pct_traj", type=float, default=1.0)
-    parser.add_argument("--batch_size", type=int, default=2048)
+    parser.add_argument("--batch_size", type=int, default=1024)
     parser.add_argument("--embed_dim", type=int, default=128)
     parser.add_argument("--n_layer", type=int, default=3)
     parser.add_argument("--n_head", type=int, default=1)
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_eval_episodes", type=int, default=100)
     parser.add_argument("--max_iters", type=int, default=5000)
     parser.add_argument("--num_steps_per_iter", type=int, default=512)
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cuda:1")
     parser.add_argument(
         # "--traj_path", type=str, default="./traces_dataset/rmpc5_trajs-15000.pkl"
         "--traj_path",

@@ -8,16 +8,18 @@ from torch.utils.data import TensorDataset, DataLoader
 from utils.ema import ExponentialMovingAverage
 from utils.data_loader import get_throughput_char
 
+CUDA_ID = "cuda:0"
+
 
 class QoE_predictor_model(nn.Module):
     def __init__(self):
         super().__init__()
         self.QoE_predictor_model = nn.Sequential(
-            nn.Linear(4, 128),
+            nn.Linear(4, 64),
             nn.LeakyReLU(),
-            nn.Linear(128, 32),
+            nn.Linear(64, 64),
             nn.LeakyReLU(),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
         )
         self.optimizer_inv = torch.optim.Adam(
             self.QoE_predictor_model.parameters(), lr=1e-5, weight_decay=0.0001
@@ -141,15 +143,15 @@ def get_data_tensor(dataset):
 
 def get_training_data(dataset, start_ptr):
     batch_size = len(dataset["observations"])
-    discounts_all = 0.99 ** np.arange(100)
+    # discounts_all = 0.99 ** np.arange(100)
     obs = []
     rtg = []
 
     for i in range(batch_size):
         obs.append(dataset["observations"][i][start_ptr, :4])
         rewards = dataset["rewards"][i][start_ptr + 1 :]
-        discounts = discounts_all[: len(rewards)]
-        rtg.append(((discounts * rewards).sum()) / 1000)
+        # discounts = discounts_all[: len(rewards)]
+        rtg.append((rewards.sum()) / 500)
 
     return obs, rtg
 
@@ -177,7 +179,7 @@ class Trainer(object):
             self.test_split,
             self.file_path,
         )
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(CUDA_ID if torch.cuda.is_available() else "cpu")
         self.model = QoE_predictor_model().to(self.device)
         self.ema_q = load_ema(self.model, decay=0.999)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
@@ -227,7 +229,7 @@ class Trainer(object):
             if (epoch + 1) % 100 == 0:
                 torch.save(
                     self.model.state_dict(),
-                    f"./checkpoints/q2go/Q2GO_oracle_pre{epoch}.pt",
+                    f"./checkpoints/q2go/Q2GO_oracle_pre{epoch+1}.pt",
                 )
             plt.plot(loss_total_list)
             plt.savefig("loss_qoe2go_oracle.png")
@@ -239,8 +241,9 @@ class Trainer(object):
 def main():
     file_path = "./traces_dataset/oracle8_trajs-15000.pkl"
     # file_path = "./traces_dataset/rmpc5_trajs-15000.pkl"
+    # file_path = "./traces_dataset/rmpc6_trajs-5000.pkl"
     trainer = Trainer(file_path)
-    loss_list = trainer.train(1000)
+    loss_list = trainer.train(400)
     plt.plot(loss_list)
     plt.savefig("loss_qoe2go_oracle.png")
 

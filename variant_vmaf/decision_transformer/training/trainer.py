@@ -51,40 +51,42 @@ class Trainer:
             self.scheduler.step()
 
         logs["time/training"] = time.time() - train_start
-
-        eval_start = time.time()
-        self.model.eval()
-        if self.ema is not None:
-            self.ema.store(self.model.parameters())
-            self.ema.copy_to(self.model.parameters())
-        # for eval_fn in self.eval_fns:
-        output_mean, output_std = self.eval_fns(self.model)
-        if output_mean >= max(self.qoe_list):
-            torch.save(
-                self.model.state_dict(),
-                f"./checkpoints/dt_{self.ts}/dt_model_{iter_num}_r{output_mean}.pt",
-            )
-            self.qoe_list.append(output_mean)
-        #     for k, v in outputs.items():
-        #         logs[f'evaluation/{k}'] = v
-        if self.ema is not None:
-            self.ema.restore(self.model.parameters())
-
-        logs["time/total"] = time.time() - self.start_time
-        logs["time/evaluation"] = time.time() - eval_start
         logs["training/train_loss_mean"] = np.mean(train_losses)
         logs["training/train_loss_std"] = np.std(train_losses)
-        logs["evaluation/valid_QoE_mean"] = output_mean
-        logs["evaluation/valid_QoE_std"] = output_std
 
-        # for k in self.diagnostics:
-        #     logs[k] = self.diagnostics[k]
+        # ----------- start the evaluation -------------
+        if iter_num % 10 == 0 or iter_num == 1:
+            eval_start = time.time()
+            self.model.eval()
+            if self.ema is not None:
+                self.ema.store(self.model.parameters())
+                self.ema.copy_to(self.model.parameters())
+            # for eval_fn in self.eval_fns:
+            output_mean, output_std = self.eval_fns(self.model)
+            if output_mean >= max(self.qoe_list):
+                torch.save(
+                    self.model.state_dict(),
+                    f"./checkpoints/dt_{self.ts}/dt_model_{iter_num}_r{output_mean}.pt",
+                )
+                self.qoe_list.append(output_mean)
+            #     for k, v in outputs.items():
+            #         logs[f'evaluation/{k}'] = v
+            if self.ema is not None:
+                self.ema.restore(self.model.parameters())
 
-        if print_logs:
-            print("=" * 80)
-            print(f"Iteration {iter_num}")
-            for k, v in logs.items():
-                print(f"{k}: {v}")
+            logs["time/total"] = time.time() - self.start_time
+            logs["time/evaluation"] = time.time() - eval_start
+            logs["evaluation/valid_QoE_mean"] = output_mean
+            logs["evaluation/valid_QoE_std"] = output_std
+
+            # for k in self.diagnostics:
+            #     logs[k] = self.diagnostics[k]
+
+            if print_logs:
+                print("=" * 80)
+                print(f"Iteration {iter_num}")
+                for k, v in logs.items():
+                    print(f"{k}: {v}")
 
         return logs
 
